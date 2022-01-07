@@ -1,0 +1,8 @@
+* {  
+  box-sizing: border-box;
+}
+.icon-button {
+  background: none;
+  border: none;
+  color: inherit;
+}
