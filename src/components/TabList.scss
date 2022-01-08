@@ -2,10 +2,10 @@
     .close-icon{
         visibility: hidden;
     }
-    .nav-link:hover .close-icon{
+    .nav-link:hover .close-icon{ //hover的时候，显示关闭按钮
         visibility: visible;
     }
-    .nav-link.active .close-icon{
+    .nav-link.active .close-icon{  //当处于active的时候，一直显示关闭按钮
         visibility: visible;
     }
 }
