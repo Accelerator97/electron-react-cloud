@@ -55,7 +55,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                                         <FontAwesomeIcon icon={faMarkdown} size="lg"></FontAwesomeIcon>
                                     </span>
                                     <span className='col-8 c-link' onClick={() => { onFileClick(file.id) }}>{file.title}</span>
-                                    <button type="button" className='icon-button col-1' onClick={() => { setEditStatus(file.id); setValue(file.title) }}>
+                                    <button type="button" className='icon-button col-1 ' onClick={() => { setEditStatus(file.id); setValue(file.title) }}>
                                         <FontAwesomeIcon icon={faEdit} size="lg"></FontAwesomeIcon>
                                     </button>
                                     <button type="button" className='icon-button col-1' onClick={() => { onFileDelete(file.id) }}>
