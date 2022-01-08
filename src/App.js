@@ -5,12 +5,14 @@ import FileSearch from './components/FileSearch'
 import FileList from './components/FileList';
 import defaultFiles from './utils/defaultFiles';
 import BottomBtn from './components/BottomBtn'; 
+import TabList from './components/TabList';
+
 
 function App() {
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
-        <div className="col left-panel">
+        <div className="col-3 left-panel">
           <FileSearch title="我的云文档" onFileSearch={(value) => { console.log(value) }}></FileSearch>
           <FileList 
              files={defaultFiles} 
@@ -28,8 +30,8 @@ function App() {
             </div>
           </div>
         </div>
-        <div className="col bg-primary right-panel">
-          <h1>this is a panel</h1>
+        <div className="col-9  right-panel">
+           <TabList files={defaultFiles} onTabClick={(id)=>{console.log(id)}} activeId="1"></TabList>
         </div>
       </div>
     </div>

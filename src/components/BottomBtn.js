@@ -19,10 +19,10 @@ const BottomBtn = ({text,colorClass,icon,onBtnClick}) =>{
         </button>
     )
 }
-BottomBtn.prototype ={
+BottomBtn.propTypes ={
     text:PropTypes.string,
     colorClass:PropTypes.string,
-    icon:PropTypes.element.isRequired,
+    icon:PropTypes.object.isRequired,
     onBtnClick:PropTypes.func
 }
 
