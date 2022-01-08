@@ -31,7 +31,7 @@ function App() {
           </div>
         </div>
         <div className="col-9  right-panel">
-           <TabList files={defaultFiles} onTabClick={(id)=>{console.log(id)}} activeId="1"></TabList>
+           <TabList files={defaultFiles} onTabClick={(id)=>{console.log(id)}} activeId="1" onCloseTab={id=>console.log('closetab',id)}></TabList>
         </div>
       </div>
     </div>
