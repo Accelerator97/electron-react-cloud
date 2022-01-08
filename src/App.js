@@ -6,6 +6,9 @@ import FileList from './components/FileList';
 import defaultFiles from './utils/defaultFiles';
 import BottomBtn from './components/BottomBtn'; 
 import TabList from './components/TabList';
+import SimpleMDE from "react-simplemde-editor";
+import "easymde/dist/easymde.min.css";
+
 
 
 function App() {
@@ -32,6 +35,7 @@ function App() {
         </div>
         <div className="col-9  right-panel">
            <TabList files={defaultFiles} onTabClick={(id)=>{console.log(id)}} activeId="1" onCloseTab={id=>console.log('closetab',id)} unSaveIds={['1','2','3','4']}></TabList>
+           <SimpleMDE value={defaultFiles[1].body} onChange={(value)=>{console.log(value)}} options={{minHeight:'515px'}}  />;
         </div>
       </div>
     </div>
