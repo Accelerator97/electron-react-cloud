@@ -18,6 +18,7 @@ const { remote } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
 const fileStore = new Store({ 'name': 'Files Data' })
+const settingsStore = new Store({name: 'Settings'})
 
 //只有当新建，删除，重命名的时候才进行持久化操作
 const saveFilesToStore = (files) => {
@@ -60,7 +61,7 @@ function App() {
   const filesArr = (searchFiles.length > 0) ? searchFiles : filesObjtoArr
 
   //通过remote模块从electron的主进程拿到getPath API  即文件存放的地方
-  const savedLocation = remote.app.getPath('documents')
+  const savedLocation = settingsStore.get('saveFileLocation') || remote.app.getPath('documents')
 
 
   const fileClick = (fileId) => {

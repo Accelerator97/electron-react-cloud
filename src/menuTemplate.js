@@ -158,7 +158,7 @@ let template = [{
 },
 ]
 
-if (process.platform === 'darwin') {
+if (process.platform === 'darwin') { //如果是苹果系统
   const name = app.getName()
   template.unshift({
     label: name,
@@ -201,7 +201,7 @@ if (process.platform === 'darwin') {
     }]
   })
 } else {
-  template[0].submenu.push({
+  template[0].submenu.push({ //window系统
     label: '设置',
     accelerator: 'Ctrl+,',
     click: () => {
