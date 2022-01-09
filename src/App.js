@@ -15,16 +15,16 @@ import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 
 const path = window.require('path')
-const { remote } = window.require('electron')
+const { remote,app } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
-const fileStore = new Store({'name':'Files Data'})
+const fileStore = new Store({ 'name': 'Files Data' })
 
 //只有当新建，删除，重命名的时候才进行持久化操作
-const saveFilesToStore = (files)=>{
+const saveFilesToStore = (files) => {
   //不用把files的所有信息存储到store，只需要id,path,title,createdAt
-  const filesStoreObj = objToArr(files).reduce((result,file)=>{
-    const {id,path,title,createdAt} = file
+  const filesStoreObj = objToArr(files).reduce((result, file) => {
+    const { id, path, title, createdAt } = file
     result[id] = {
       id,
       path,
@@ -32,14 +32,13 @@ const saveFilesToStore = (files)=>{
       createdAt
     }
     return result
-  },{})
-  fileStore.set('files',filesStoreObj)
+  }, {})
+  fileStore.set('files', filesStoreObj)
 }
 
-
 function App() {
-  //根据defaultFiles生成默认的files数组
-  const [files, setFiles] = useState(flattenArr(defaultFiles))
+  //从filesStore中读取,生成默认的files数组
+  const [files, setFiles] = useState(fileStore.get('files') || {})
   //当前激活文件的id,数量只为一个
   const [activeFileId, setActiveFileId] = useState('')
   //已打开文件的id构成的数组
@@ -67,6 +66,15 @@ function App() {
 
   const fileClick = (fileId) => {
     setActiveFileId(fileId)
+    const currentFile = files[fileId]
+    //第一次打开文件 状态设置为isloaded:true，下一次打开就不用调用fs读取文件
+    if (!currentFile.isLoaded) {
+      fileHelper.readFile(currentFile.path).then((value) => {
+        const newFile = { ...files[fileId], body: value, isLoaded: true }
+        setFiles({ ...files, [fileId]: newFile })
+      })
+    }
+
     //先判断openFileId是否包括fileId，然后tab打开file
     if (!openFileIds.includes(fileId)) {
       setOpenFileIds([...openFileIds, fileId])
@@ -76,6 +84,7 @@ function App() {
   const tabClick = (fileId) => {
     setActiveFileId(fileId)
   }
+
   // 点击tab的关闭icon 把id从openFileId中删除,同时高亮第一项
   const tabClose = (id) => {
     const tabsWithout = openFileIds.filter(fileId => fileId !== id)
@@ -89,13 +98,7 @@ function App() {
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
   //前面的事件绑定onClick={xxx} onClick={(value)=>{fileChange(id,value)}}
   //fileChange做两件事情 1.更新file的body  2.显示未保存的小红点
-  const fileChange = useCallback((id, value) => {
-    // const newFiles = files.map(file => {
-    //   if (file.id === id) {
-    //     file.body = value
-    //   }
-    //   return file
-    // })
+  const fileChange = ((id, value) => {
     //不要直接通过files[id].body =value 修改files 要通过setFiles修改
     const newFiles = { ...files[id], body: value }
     setFiles({ ...files, [id]: newFiles })
@@ -103,7 +106,7 @@ function App() {
     if (!unSaveFileIds.includes(id)) {
       setUnSaveFileIds([...unSaveFileIds, id])
     }
-  }, [])
+  })
   //解决bug:当输入一个字符后，不会自动获取焦点
   const autofocusNoSpellcheckerOptions = useMemo(() => {
     return {
@@ -114,36 +117,37 @@ function App() {
 
 
   const deleteFile = (id) => {
-    // const newFiles = files.filter(file => file.id !== id)
-    // setFiles(newFiles)
-    fileHelper.deleteFile(path.join(savedLocation, `${files[id].title}.md`)
-    ).then(() => {
-      delete files[id]
-      setFiles(files)
-      //如果file已经在tab打开 
-      tabClose(id)
-    })
+    if (files[id].isNew) { //只是刚刚创建还没存到electron-store中
+      //排除id剩下的属性集合成一个对象
+      const {[id]:value,...afterDelete} = files
+      setFiles(afterDelete)
+    } else {
+      fileHelper.deleteFile(path.join(savedLocation, `${files[id].title}.md`)
+      ).then(() => {
+        const {[id]:value,...afterDelete} = files
+        setFiles(afterDelete)
+        saveFilesToStore(files)
+        //如果file已经在tab打开 
+        tabClose(id)
+      })
+    }
   }
 
   const updateFileName = (id, title, isNew) => {
-    // const newFiles = files.map(file => {
-    //   if (file.id === id) {
-    //     file.title = title
-    //     //要重置isNew 不然input框一直显示
-    //     file.isNew =false
-    //   }
-    //   return file
-    // })
-    const modifiledFile = { ...files[id], title, isNew: false }
+    const newPath = path.join(savedLocation, `${title}.md`)
+    const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
+    const newFiles = { ...files, [id]: modifiledFile }
     //如果是新建立的文件
     if (isNew) {
-      fileHelper.writeFile(path.join(savedLocation, `${title}.md`), files[id].body).then(() => {
-        setFiles({ ...files, [id]: modifiledFile })
+      fileHelper.writeFile(newPath, files[id].body).then(() => {
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
       })
     } else { //对已有的文件重命名
-      fileHelper.renameFile(path.join(savedLocation, `${files[id].title}.md`), path.join(savedLocation, `${title}.md`)
-      ).then(() => {
-        setFiles({ ...files, [id]: modifiledFile })
+      const oldPath = path.join(savedLocation, `${files[id].title}.md`)
+      fileHelper.renameFile(oldPath, newPath).then(() => {
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
       })
     }
   }
@@ -171,6 +175,7 @@ function App() {
     setFiles({ ...files, [newId]: newFile })
   }
 
+  //保存文件
   const saveCurrentFile = () => {
     fileHelper.writeFile(path.join(savedLocation, `${activeFile.title}.md`), activeFile.body
     ).then(() => {
