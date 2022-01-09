@@ -1,5 +1,6 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow,Menu } = require('electron')
 const isDev = require('electron-is-dev')
+const menuTemplate =require('./src/menuTemplate')
 
 let mainWindow
 app.on('ready', () => {
@@ -13,6 +14,9 @@ app.on('ready', () => {
     //判断是否在生产环境
     const urlLocation = isDev ? 'http://localhost:3000' : 'dummyurl'
     mainWindow.loadURL(urlLocation)
-    mainWindow.webContents.openDevTools()
 
+    //设置原生菜单
+    const menu =Menu.buildFromTemplate(menuTemplate)
+    Menu.setApplicationMenu(menu)
+    mainWindow.webContents.openDevTools()
 })

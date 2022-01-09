@@ -7,13 +7,13 @@ import SimpleMDE from "react-simplemde-editor";
 import { v4 as uuidv4 } from 'uuid';
 import { flattenArr, objToArr } from './utils/helper'
 import { fileHelper } from './utils/fileHelper'
-
+import useIpcRenderer from './hooks/useIpcRender';
 import FileSearch from './components/FileSearch'
 import FileList from './components/FileList';
 import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 
-const { join, basename, extname ,dirname} = window.require('path')
+const { join, basename, extname, dirname } = window.require('path')
 const { remote } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
@@ -97,15 +97,17 @@ function App() {
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
   //前面的事件绑定onClick={xxx} onClick={(value)=>{fileChange(id,value)}}
   //fileChange做两件事情 1.更新file的body  2.显示未保存的小红点
-  const fileChange = ((id, value) => {
-    //不要直接通过files[id].body =value 修改files 要通过setFiles修改
-    const newFiles = { ...files[id], body: value }
-    setFiles({ ...files, [id]: newFiles })
-    //更新unSaveFileId
-    if (!unSaveFileIds.includes(id)) {
-      setUnSaveFileIds([...unSaveFileIds, id])
+  const fileChange = useCallback(((id, value) => {
+    if (value !== files[id].body) {
+      //不要直接通过files[id].body =value 修改files 要通过setFiles修改
+      const newFiles = { ...files[id], body: value }
+      setFiles({ ...files, [id]: newFiles })
+      //更新unSaveFileId
+      if (!unSaveFileIds.includes(id)) {
+        setUnSaveFileIds([...unSaveFileIds, id])
+      }
     }
-  })
+  }),[activeFile])
   //解决bug:当输入一个字符后，不会自动获取焦点
   const autofocusNoSpellcheckerOptions = useMemo(() => {
     return {
@@ -135,7 +137,7 @@ function App() {
   const updateFileName = (id, title, isNew) => {
     //如果是新创建的文件，路径就是savaLocation+title.md
     //如果不是新文件，路径是old dirname + new title
-    const newPath = isNew?join(savedLocation, `${title}.md`):join(dirname(files[id].path),`${title}.md`)
+    const newPath = isNew ? join(savedLocation, `${title}.md`) : join(dirname(files[id].path), `${title}.md`)
     const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
     const newFiles = { ...files, [id]: modifiledFile }
     //如果是新建立的文件
@@ -178,6 +180,7 @@ function App() {
 
   //保存文件
   const saveCurrentFile = () => {
+    // console.log(activeFile)
     fileHelper.writeFile(activeFile.path, activeFile.body
     ).then(() => {
       setUnSaveFileIds(unSaveFileIds.filter(id => id !== activeFile.id))
@@ -232,6 +235,11 @@ function App() {
       }
     })
   }
+  useIpcRenderer({
+    'create-new-file': createFiles,
+    'import-file': importFiles,
+    'save-edit-file': saveCurrentFile
+  })
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
@@ -286,13 +294,6 @@ function App() {
                 options={{ minHeight: '515px', ...autofocusNoSpellcheckerOptions }}
                 key={activeFile && activeFile.id}
               />
-              <BottomBtn
-                text="保存"
-                colorClass="btn-success"
-                icon={faSave}
-                onBtnClick={saveCurrentFile}
-              >
-              </BottomBtn>
             </>
           }
         </div>
