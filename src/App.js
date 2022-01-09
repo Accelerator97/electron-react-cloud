@@ -1,21 +1,22 @@
 import React, { useCallback, useState,useMemo } from 'react';
 import './App.scss';
 import 'bootstrap/dist/css/bootstrap.min.css'
+import "easymde/dist/easymde.min.css";
 import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
+import SimpleMDE from "react-simplemde-editor";
+import { v4 as uuidv4 } from 'uuid';
+import { flattenArr,objToArr} from './utils/helper'
+
 import FileSearch from './components/FileSearch'
 import FileList from './components/FileList';
 import defaultFiles from './utils/defaultFiles';
 import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
-import SimpleMDE from "react-simplemde-editor";
-import "easymde/dist/easymde.min.css";
-import { v4 as uuidv4 } from 'uuid';
-
-
-
 
 function App() {
-  const [files, setFiles] = useState(defaultFiles)
+  //根据defaultFiles生成默认的files数组
+  const [files, setFiles] = useState(flattenArr(defaultFiles))
+  console.log(files)
   //当前激活文件的id,数量只为一个
   const [activeFileId, setActiveFileId] = useState('')
   //已打开文件的id构成的数组
@@ -25,15 +26,16 @@ function App() {
   //搜索文件形成的数组
   const [searchFiles, setSearchFiles] = useState([])
 
-
+  const filesObjtoArr = objToArr(files)
+  console.log(filesObjtoArr)
   //根据openId生成已经打开的文件组成的数组
   const openFiles = openFileIds.map(openId => {
-    return files.find(file => file.id === openId) //通过find方法 匹配file.id === openId 然后返回一个数组
+    return files[openId]
   })
   //当前激活的的文件
-  const activeFile = files.find(file => file.id === activeFileId)
+  const activeFile = files[activeFileId]
   //如果记录搜索文件的数组有内容就用这个数组，否则就用files
-  const filesArr = (searchFiles.length > 0) ? searchFiles : files
+  const filesArr = (searchFiles.length > 0) ? searchFiles : filesObjtoArr
 
   const fileClick = (fileId) => {
     setActiveFileId(fileId)
@@ -57,15 +59,17 @@ function App() {
     }
   }
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
-  //做两件事情 1.更新file的body 但是这时不要setState 不然有bug 不能自动获取焦点 2.显示未保存的小红点
+  //做两件事情 1.更新file的body  2.显示未保存的小红点
   const fileChange = useCallback((id, value) => {
-    const newFiles = files.map(file => {
-      if (file.id === id) {
-        file.body = value
-      }
-      return file
-    })
-    setFiles(newFiles)
+    // const newFiles = files.map(file => {
+    //   if (file.id === id) {
+    //     file.body = value
+    //   }
+    //   return file
+    // })
+    //不要直接通过files[id].body =value 修改files 要通过setFiles修改
+    const newFiles = {...files[id],body:value}
+    setFiles({...files,[id]:newFiles})
     //更新unSaveFileId
     if (!unSaveFileIds.includes(id)) {
       setUnSaveFileIds([...unSaveFileIds, id])
@@ -81,27 +85,30 @@ function App() {
 
 
   const deleteFile = (id) => {
-    const newFiles = files.filter(file => file.id !== id)
-    setFiles(newFiles)
+    // const newFiles = files.filter(file => file.id !== id)
+    // setFiles(newFiles)
+    delete files[id]
+    setFiles(files)
     //如果file已经在tab打开 
     tabClose(id)
   }
 
   const updateFileName = (id, title) => {
-    const newFiles = files.map(file => {
-      if (file.id === id) {
-        file.title = title
-        //要重置isNew 不然input框一直显示
-        file.isNew =false
-      }
-      return file
-    })
-    setFiles(newFiles)
+    // const newFiles = files.map(file => {
+    //   if (file.id === id) {
+    //     file.title = title
+    //     //要重置isNew 不然input框一直显示
+    //     file.isNew =false
+    //   }
+    //   return file
+    // })
+    const modifiledFile = {...files[id],title,isNew:false}
+    setFiles({...files,[id]:modifiledFile})
   }
 
   const fileSearch = (keyword) => {
     //字符串和数组都有include方法
-    const newFiles = files.filter(file => file.title.includes(keyword))
+    const newFiles = filesArr.filter(file => file.title.includes(keyword))
     //因为更新的是files,所以其他依赖files的地方也会变化，比如说文件已经在tab打开了，search完之后就会清空tab
     //所以要创造一个新的数组，记录搜索文件
     setSearchFiles(newFiles)
@@ -110,8 +117,7 @@ function App() {
   //点击新建文件按钮，创造文件
   const createFiles = () => {
     const newId = uuidv4()
-    const newFiles = [
-      ...files,
+    const newFile = 
       {
         id: newId,
         title: '',
@@ -120,8 +126,7 @@ function App() {
         //控制是否直接显示input框
         isNew: true
       }
-    ]
-    setFiles(newFiles)
+    setFiles({...files,[newId]:newFile})
   }
   return (
     <div className="App container-fluid px-0">
@@ -176,7 +181,6 @@ function App() {
                 options={{ minHeight: '515px' ,...autofocusNoSpellcheckerOptions}}
                 key={activeFile && activeFile.id}
               />
-              {activeFile.body}
             </>
           }
         </div>
