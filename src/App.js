@@ -10,12 +10,11 @@ import { fileHelper } from './utils/fileHelper'
 
 import FileSearch from './components/FileSearch'
 import FileList from './components/FileList';
-import defaultFiles from './utils/defaultFiles';
 import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 
-const path = window.require('path')
-const { remote,app } = window.require('electron')
+const { join, basename, extname ,dirname} = window.require('path')
+const { remote } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
 const fileStore = new Store({ 'name': 'Files Data' })
@@ -119,12 +118,12 @@ function App() {
   const deleteFile = (id) => {
     if (files[id].isNew) { //只是刚刚创建还没存到electron-store中
       //排除id剩下的属性集合成一个对象
-      const {[id]:value,...afterDelete} = files
+      const { [id]: value, ...afterDelete } = files
       setFiles(afterDelete)
     } else {
-      fileHelper.deleteFile(path.join(savedLocation, `${files[id].title}.md`)
+      fileHelper.deleteFile(join(savedLocation, `${files[id].title}.md`)
       ).then(() => {
-        const {[id]:value,...afterDelete} = files
+        const { [id]: value, ...afterDelete } = files
         setFiles(afterDelete)
         saveFilesToStore(files)
         //如果file已经在tab打开 
@@ -134,7 +133,9 @@ function App() {
   }
 
   const updateFileName = (id, title, isNew) => {
-    const newPath = path.join(savedLocation, `${title}.md`)
+    //如果是新创建的文件，路径就是savaLocation+title.md
+    //如果不是新文件，路径是old dirname + new title
+    const newPath = isNew?join(savedLocation, `${title}.md`):join(dirname(files[id].path),`${title}.md`)
     const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
     const newFiles = { ...files, [id]: modifiledFile }
     //如果是新建立的文件
@@ -144,7 +145,7 @@ function App() {
         saveFilesToStore(newFiles)
       })
     } else { //对已有的文件重命名
-      const oldPath = path.join(savedLocation, `${files[id].title}.md`)
+      const oldPath = files[id].path
       fileHelper.renameFile(oldPath, newPath).then(() => {
         setFiles(newFiles)
         saveFilesToStore(newFiles)
@@ -177,11 +178,59 @@ function App() {
 
   //保存文件
   const saveCurrentFile = () => {
-    fileHelper.writeFile(path.join(savedLocation, `${activeFile.title}.md`), activeFile.body
+    fileHelper.writeFile(activeFile.path, activeFile.body
     ).then(() => {
       setUnSaveFileIds(unSaveFileIds.filter(id => id !== activeFile.id))
     })
+  }
 
+  const importFiles = () => {
+    //第二个参数是回调函数，获取导入文件的路径
+    //electron 6.0以上可以选用promise API写法
+    remote.dialog.showOpenDialog({
+      title: '选择导入的MarkDown文件',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Markdown files', extensions: ['md'] }
+      ]
+    }, (paths) => {
+      //["C:\Users\Administrator\Desktop\面试押题\JS\JS模块化.md"]
+      //如果已经导入的，就用filter过滤掉,不再导入
+      if (Array.isArray(paths)) {
+        const filteredPaths = paths.filter(path => {
+          const alreadyAdded = Object.values(files).find(file => { //Object.values把values组成一个数组
+            return file.path === path  //find() 方法返回数组中满足提供的测试函数的第一个元素的值。否则返回 undefined。
+          })
+          return !alreadyAdded
+        })
+        //扩展成[{id:'1',path:'',title:''}]这种形式
+        const importFilesArr = filteredPaths.map(path => {
+          return {
+            id: uuidv4(),
+            //basename第二个参数是后缀名，返回的结果会去掉这个后缀名
+            title: basename(path, extname(path)),
+            path
+          }
+        })
+        // console.log(importFilesArr)
+
+
+        //获得flatten结构的state
+        const newFiles = { ...files, ...flattenArr(importFilesArr) }
+        // console.log(newFiles)
+
+        //更新state 和 electron store
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
+        if (importFilesArr.length > 0) {
+          remote.dialog.showMessageBox({
+            type: 'info',
+            title: `成功导入了${importFilesArr.length}个文件`,
+            message: `成功导入了${importFilesArr.length}个文件`
+          })
+        }
+      }
+    })
   }
   return (
     <div className="App container-fluid px-0">
@@ -210,6 +259,7 @@ function App() {
                 text="导入"
                 colorClass="btn-success"
                 icon={faFileImport}
+                onBtnClick={importFiles}
               >
               </BottomBtn>
             </div>
