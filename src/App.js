@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState,useMemo } from 'react';
 import './App.scss';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
@@ -58,18 +58,27 @@ function App() {
   }
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
   //做两件事情 1.更新file的body 但是这时不要setState 不然有bug 不能自动获取焦点 2.显示未保存的小红点
-  const fileChange = (id, value) => {
-    files.map(file => {
+  const fileChange = useCallback((id, value) => {
+    const newFiles = files.map(file => {
       if (file.id === id) {
         file.body = value
       }
       return file
     })
+    setFiles(newFiles)
     //更新unSaveFileId
     if (!unSaveFileIds.includes(id)) {
       setUnSaveFileIds([...unSaveFileIds, id])
     }
-  }
+  },[])
+   //解决bug:当输入一个字符后，不会自动获取焦点
+   const autofocusNoSpellcheckerOptions = useMemo(() => {
+    return {
+      autofocus: true,
+      spellChecker: false,
+    } ;
+  }, []);
+
 
   const deleteFile = (id) => {
     const newFiles = files.filter(file => file.id !== id)
@@ -164,7 +173,7 @@ function App() {
               <SimpleMDE
                 value={activeFile && activeFile.body}
                 onChange={(value) => fileChange(activeFile.id, value)}
-                options={{ minHeight: '515px' }}
+                options={{ minHeight: '515px' ,...autofocusNoSpellcheckerOptions}}
                 key={activeFile && activeFile.id}
               />
               {activeFile.body}
