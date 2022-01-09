@@ -66,7 +66,7 @@ function App() {
   const fileClick = (fileId) => {
     setActiveFileId(fileId)
     const currentFile = files[fileId]
-    //第一次打开文件 状态设置为isloaded:true，下一次打开就不用调用fs读取文件
+    //第一次打开文件 状态设置为isLoaded:true，下一次打开isLoaded为true,就不用调用fs读取文件
     if (!currentFile.isLoaded) {
       fileHelper.readFile(currentFile.path).then((value) => {
         const newFile = { ...files[fileId], body: value, isLoaded: true }
