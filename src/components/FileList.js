@@ -33,8 +33,9 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     useEffect(() => {
         const editItem = files.find(file => file.id === editStatus)
         if (enterPressed && editStatus && value.trim() !== '') {
-            //保存之后重置状态
-            onSaveEdit(editItem.id, value)
+            //保存之后重置状态 
+            //加上isNew是为了区分是新建文件的命名还是对已有文件的重命名
+            onSaveEdit(editItem.id, value,editItem.isNew)
             setEditStatus(false)
             setValue('')
         } 

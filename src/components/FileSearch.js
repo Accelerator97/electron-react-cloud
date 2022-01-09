@@ -14,8 +14,8 @@ const FileSearch = ({ title, onFileSearch }) => {
     const closeSearch = () => {
         setInputActive(false)
         setValue('')
-        //这是为了重置List 
-        onFileSearch('')
+        //点击关闭按钮，重置List，展示全部文档 
+        onFileSearch(false)
     }
     //监听键盘回车和esc按下
     useEffect(() => {
