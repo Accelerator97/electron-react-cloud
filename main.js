@@ -19,13 +19,14 @@ app.on('ready', () => {
     //添加事件
     ipcMain.on('open-settings-window',()=>{
         const settingWindowConfig = {
-            width:500,
-            height:400,
+            width:600,
+            height:600,
             parent:mainWindow
         }
         //加载setting.html  如果是加载html文件用file:// 结合path.join拼接文件路径
         const settingFileLocation = `file://${path.join(__dirname,'./settings/settings.html')}` 
         settingWindow = new AppWindow(settingWindowConfig,settingFileLocation)
+        settingWindow.removeMenu() //移除原生菜单
         settingWindow.on('closed',()=>{
             settingWindow = null
         })

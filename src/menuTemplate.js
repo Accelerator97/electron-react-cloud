@@ -2,7 +2,9 @@ const { app, shell, ipcMain } = require('electron')
 const Store = require('electron-store')
 const settingsStore = new Store({ name: 'Settings'})
 
+//确定七牛config是否被配置 ！！表明返回布尔值
 const qiniuIsConfiged =  ['accessKey', 'secretKey', 'bucketName'].every(key => !!settingsStore.get(key))
+//自动同步
 let enableAutoSync = settingsStore.get('enableAutoSync')
 let template = [{
   label: '文件',
@@ -75,10 +77,10 @@ let template = [{
   }, {
     label: '自动同步',
     type: 'checkbox',
-    enabled: qiniuIsConfiged,
-    checked: enableAutoSync,
+    enabled: qiniuIsConfiged, //enabled控制菜单是否显示
+    checked: enableAutoSync, //checked 的功能类似多选按钮
     click: () => {
-      settingsStore.set('enableAutoSync', !enableAutoSync)
+      settingsStore.set('enableAutoSync', !enableAutoSync) //点击的时候将按钮取反
     }
   }, {
     label: '全部同步至云端',
