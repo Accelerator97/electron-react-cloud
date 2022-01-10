@@ -18,7 +18,7 @@ const { remote } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
 const fileStore = new Store({ 'name': 'Files Data' })
-const settingsStore = new Store({name: 'Settings'})
+const settingsStore = new Store({ name: 'Settings' })
 
 //只有当新建，删除，重命名的时候才进行持久化操作
 const saveFilesToStore = (files) => {
@@ -133,24 +133,38 @@ function App() {
       })
     }
   }
-
+  const isSameName = (newTitle) => {
+    //现有title组成的数组
+    let existedTitleArr = objToArr(files).map(item => item.title)
+    return existedTitleArr.indexOf(newTitle) >= 0 ? true : false
+  }
   const updateFileName = (id, title, isNew) => {
-    //如果是新创建的文件，路径就是savaLocation+title.md
-    //如果不是新文件，路径是old dirname + new title
-    const newPath = isNew ? join(savedLocation, `${title}.md`) : join(dirname(files[id].path), `${title}.md`)
-    const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
-    const newFiles = { ...files, [id]: modifiledFile }
-    //如果是新建立的文件
-    if (isNew) {
-      fileHelper.writeFile(newPath, files[id].body).then(() => {
-        setFiles(newFiles)
-        saveFilesToStore(newFiles)
-      })
-    } else { //对已有的文件重命名
-      const oldPath = files[id].path
-      fileHelper.renameFile(oldPath, newPath).then(() => {
-        setFiles(newFiles)
-        saveFilesToStore(newFiles)
+
+    if (isSameName(title) === false) {
+      //如果是新创建的文件，路径就是savaLocation+title.md
+      //如果不是新文件，路径是old dirname + new title
+      const newPath = isNew ? join(savedLocation, `${title}.md`) : join(dirname(files[id].path), `${title}.md`)
+      const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
+      const newFiles = { ...files, [id]: modifiledFile }
+      //如果是新建立的文件
+      if (isNew) {
+        fileHelper.writeFile(newPath, files[id].body).then(() => {
+          setFiles(newFiles)
+          saveFilesToStore(newFiles)
+        })
+      } else { //对已有的文件重命名
+        const oldPath = files[id].path
+        fileHelper.renameFile(oldPath, newPath).then(() => {
+          setFiles(newFiles)
+          saveFilesToStore(newFiles)
+        })
+      }
+    }else {
+      remote.dialog.showMessageBox({
+        type:'warning',
+        title:'重复命名',
+        message:'与已有文档名字重复',
+        button:['确定']
       })
     }
   }

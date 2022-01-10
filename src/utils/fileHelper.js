@@ -1,5 +1,4 @@
 const fs = window.require('fs').promises
-const path = window.require('path')
 
 export const fileHelper = {
     readFile:(path) => {
