@@ -19,3 +19,4 @@ const useIpcRenderer = (keyCallbackMap) => {
 }
 
 export default useIpcRenderer
+

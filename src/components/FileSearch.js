@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
 import PropTypes from 'prop-types'
 import useKeyPress from '../hooks/useKeyPress'
+import useIpcRenderer from '../hooks/useIpcRender'
 
 //onFileSearch是按下回车键触发搜索的回调函数
 const FileSearch = ({ title, onFileSearch }) => {
@@ -11,6 +12,9 @@ const FileSearch = ({ title, onFileSearch }) => {
     const enterPressed = useKeyPress(13)
     const escPressed = useKeyPress(27)
     const node = useRef(null)
+    const startSearch = () => {
+        setInputActive(true)
+    }
     const closeSearch = () => {
         setInputActive(false)
         setValue('')
@@ -44,6 +48,9 @@ const FileSearch = ({ title, onFileSearch }) => {
             node.current.focus()
         }
     }, [inputActive])
+    useIpcRenderer({
+        'search-file':startSearch
+    })
     return (
         <div className='alert alert-primary d-flex justify-content-between align-items-center mb-0'>
             {!inputActive &&

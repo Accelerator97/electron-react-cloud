@@ -237,7 +237,7 @@ function App() {
   useIpcRenderer({
     'create-new-file': createFiles,
     'import-file': importFiles,
-    'save-edit-file': saveCurrentFile
+    'save-edit-file': saveCurrentFile,
   })
   return (
     <div className="App container-fluid px-0">
