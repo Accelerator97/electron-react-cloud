@@ -133,14 +133,8 @@ function App() {
       })
     }
   }
-  const isSameName = (newTitle) => {
-    //现有title组成的数组
-    let existedTitleArr = objToArr(files).map(item => item.title)
-    return existedTitleArr.indexOf(newTitle) >= 0 ? true : false
-  }
-  const updateFileName = (id, title, isNew) => {
 
-    if (isSameName(title) === false) {
+  const updateFileName = (id, title, isNew) => {
       //如果是新创建的文件，路径就是savaLocation+title.md
       //如果不是新文件，路径是old dirname + new title
       const newPath = isNew ? join(savedLocation, `${title}.md`) : join(dirname(files[id].path), `${title}.md`)
@@ -159,14 +153,6 @@ function App() {
           saveFilesToStore(newFiles)
         })
       }
-    }else {
-      remote.dialog.showMessageBox({
-        type:'warning',
-        title:'重复命名',
-        message:'与已有文档名字重复',
-        button:['确定']
-      })
-    }
   }
 
   const fileSearch = (keyword) => {
@@ -215,7 +201,8 @@ function App() {
       if (Array.isArray(paths)) {
         const filteredPaths = paths.filter(path => {
           const alreadyAdded = Object.values(files).find(file => { //Object.values把values组成一个数组
-            return file.path === path  //find() 方法返回数组中满足提供的测试函数的第一个元素的值。否则返回 undefined。
+            return file.path === path  
+            //find() 方法返回数组中满足提供的测试函数的第一个元素的值。否则返回 undefined
           })
           return !alreadyAdded
         })
