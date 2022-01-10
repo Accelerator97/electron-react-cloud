@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import './App.scss';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import "easymde/dist/easymde.min.css";
@@ -55,7 +55,7 @@ function App() {
   const openFiles = openFileIds.map(openId => {
     return files[openId]
   })
-  //当前激活的的文件
+  //根据activeFileId获取当前激活的的文件
   const activeFile = files[activeFileId]
   //如果记录搜索文件的数组有内容就用这个数组，否则就用filesObjtoArr
   const filesArr = (searchFiles.length > 0) ? searchFiles : filesObjtoArr
@@ -98,7 +98,7 @@ function App() {
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
   //前面的事件绑定onClick={xxx} onClick={(value)=>{fileChange(id,value)}}
   //fileChange做两件事情 1.更新file的body  2.显示未保存的小红点
-  const fileChange = useCallback(((id, value) => {
+  const fileChange = ((id, value) => {
     if (value !== files[id].body) {
       //不要直接通过files[id].body =value 修改files 要通过setFiles修改
       const newFiles = { ...files[id], body: value }
@@ -108,7 +108,7 @@ function App() {
         setUnSaveFileIds([...unSaveFileIds, id])
       }
     }
-  }),[activeFile])
+  })
   //解决bug:当输入一个字符后，不会自动获取焦点
   const autofocusNoSpellcheckerOptions = useMemo(() => {
     return {
@@ -120,15 +120,14 @@ function App() {
 
   const deleteFile = (id) => {
     if (files[id].isNew) { //只是刚刚创建还没存到electron-store中
-      //排除id剩下的属性集合成一个对象
+      //排除对应的id，剩下的id集合成一个对象
       const { [id]: value, ...afterDelete } = files
       setFiles(afterDelete)
-    } else {
-      fileHelper.deleteFile(join(savedLocation, `${files[id].title}.md`)
-      ).then(() => {
+    } else { //文件已经存到了electron-store中
+      fileHelper.deleteFile(files[id].path).then(() => {
         const { [id]: value, ...afterDelete } = files
         setFiles(afterDelete)
-        saveFilesToStore(files)
+        saveFilesToStore(afterDelete)
         //如果file已经在tab打开 
         tabClose(id)
       })
@@ -181,7 +180,6 @@ function App() {
 
   //保存文件
   const saveCurrentFile = () => {
-    // console.log(activeFile)
     fileHelper.writeFile(activeFile.path, activeFile.body
     ).then(() => {
       setUnSaveFileIds(unSaveFileIds.filter(id => id !== activeFile.id))
@@ -295,6 +293,13 @@ function App() {
                 options={{ minHeight: '515px', ...autofocusNoSpellcheckerOptions }}
                 key={activeFile && activeFile.id}
               />
+              <BottomBtn
+                text="保存"
+                colorClass="btn-success"
+                icon={faSave}
+                onBtnClick={saveCurrentFile}
+              >
+              </BottomBtn>
             </>
           }
         </div>
