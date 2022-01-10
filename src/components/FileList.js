@@ -91,7 +91,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
             }
         }
         if (escPressed && editStatus) {
-            //关闭input框
+            //按下esc关闭input框
             closeInput(editItem)
         }
     })
