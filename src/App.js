@@ -14,7 +14,7 @@ import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 
 const { join, basename, extname, dirname } = window.require('path')
-const { remote } = window.require('electron')
+const { remote,ipcRenderer } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
 const fileStore = new Store({ 'name': 'Files Data' })
@@ -35,6 +35,9 @@ const saveFilesToStore = (files) => {
   }, {})
   fileStore.set('files', filesStoreObj)
 }
+
+//判断是否设置了七牛云自动上传的参数 以及勾选了自动上传的按钮
+const getAutoSync = () => ['accessKey', 'secretKey', 'bucketName', 'enableAutoSync'].every(key => !!settingsStore.get(key))
 
 function App() {
   //从filesStore中读取,生成默认的files数组
@@ -180,9 +183,12 @@ function App() {
 
   //保存文件
   const saveCurrentFile = () => {
-    fileHelper.writeFile(activeFile.path, activeFile.body
-    ).then(() => {
+    const {path,body,title} = activeFile
+    fileHelper.writeFile(path, body).then(() => {
       setUnSaveFileIds(unSaveFileIds.filter(id => id !== activeFile.id))
+      if(getAutoSync){
+        ipcRenderer.send('upload-file',{key:`${title}.md`,path})
+      }
     })
   }
 

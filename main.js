@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain,dialog } = require('electron')
 const isDev = require('electron-is-dev')
 const menuTemplate = require('./src/menuTemplate')
 const AppWindow = require('./src/AppWindow')
@@ -8,6 +8,12 @@ const QiniuManager = require('./src/utils/QiniuManager')
 const settingsStore = new Store({ name: 'Settings'})
 
 let mainWindow, settingWindow
+const createManager=()=>{
+    const accessKey  = settingsStore.get('accessKey')
+    const secretKey  = settingsStore.get('secretKey')
+    const bucketName  = settingsStore.get(' bucketName')
+    return new QiniuManager(accessKey,secretKey,bucketName)
+}
 app.on('ready', () => {
     const mainWindowConfig = {
         width: 1024,
@@ -46,7 +52,6 @@ app.on('ready', () => {
     ipcMain.on('config-is-saved', () => {
         //拿到qiniu菜单项，在windows和mac系统，qiniu菜单项对应的index不同
         let qiniuMenu = process.platform === 'darwin' ? menu.item[3] : menu.item[2]
-        qiniuMenu.submenu.items[2].enabled = true
         const switchItems = (toggle)=>{
             [1,2,3].forEach(number=>{
                 qiniuMenu.submenu.items[number].enabled = toggle
@@ -61,5 +66,15 @@ app.on('ready', () => {
 
     })
 
+    //上传文件
+    ipcMain.on('upload-file',(event,data)=>{
+        const manager = createManager()
+        manager.upLoadFile(data.key,data.path).then(
+            data => console.log('上传成功',data)
+        ).catch(err =>{
+            dialog.showErrorBox('同步失败','请检查七牛云参数是否正确')
+
+        })
+    })
 
 })
