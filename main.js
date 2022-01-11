@@ -73,7 +73,7 @@ app.on('ready', () => {
             data => console.log('上传成功',data)
         ).catch(err =>{
             dialog.showErrorBox('同步失败','请检查七牛云参数是否正确')
-
+            console.log(err)
         })
     })
 

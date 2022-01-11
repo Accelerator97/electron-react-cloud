@@ -293,20 +293,15 @@ function App() {
                 activeId={activeFileId}
                 onCloseTab={tabClose}
                 unSaveIds={unSaveFileIds}
+                className="tabList"
               ></TabList>
               <SimpleMDE
                 value={activeFile && activeFile.body}
                 onChange={(value) => fileChange(activeFile.id, value)}
-                options={{ minHeight: '515px', ...autofocusNoSpellcheckerOptions }}
+                options={{ minHeight:"100%",...autofocusNoSpellcheckerOptions }}
                 key={activeFile && activeFile.id}
+                className='editor'
               />
-              <BottomBtn
-                text="保存"
-                colorClass="btn-success"
-                icon={faSave}
-                onBtnClick={saveCurrentFile}
-              >
-              </BottomBtn>
             </>
           }
         </div>
