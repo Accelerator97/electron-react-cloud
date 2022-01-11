@@ -17,7 +17,7 @@ const { join, basename, extname, dirname } = window.require('path')
 const { remote,ipcRenderer } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
-const fileStore = new Store({ 'name': 'Files Data' })
+const fileStore = new Store({ name: 'Files Data' })
 const settingsStore = new Store({ name: 'Settings' })
 
 //只有当新建，删除，重命名的时候才进行持久化操作

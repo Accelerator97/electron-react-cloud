@@ -73,13 +73,13 @@ class QiniuManager {
             }).then(res => {
                 const writer = fs.createWriteStream(downloadPath)
                 res.data.pipe(writer)
-                return new Promise((resolve,reject)=>{
-                    writer.on('finish',resolve)
-                    writer.on('error',reject)
+                return new Promise((resolve, reject) => {
+                    writer.on('finish', resolve)
+                    writer.on('error', reject)
                 })
             })
-        }).catch(err=>{//整个链条最后捕获axios错误
-            return Promise.reject({err:err.response})
+        }).catch(err => {//整个链条最后捕获axios错误
+            return Promise.reject({ err: err.response })
         })
     }
     //接受两个参数(resolve,reject)，然后返回接受三个参数的函数，这个函数可以调用resolve和reject

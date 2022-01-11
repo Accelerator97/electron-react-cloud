@@ -11,7 +11,7 @@ let mainWindow, settingWindow
 const createManager=()=>{
     const accessKey  = settingsStore.get('accessKey')
     const secretKey  = settingsStore.get('secretKey')
-    const bucketName  = settingsStore.get(' bucketName')
+    const bucketName  = settingsStore.get('bucketName')
     return new QiniuManager(accessKey,secretKey,bucketName)
 }
 app.on('ready', () => {
@@ -69,6 +69,8 @@ app.on('ready', () => {
     //上传文件
     ipcMain.on('upload-file',(event,data)=>{
         const manager = createManager()
+        console.log(manager)
+        console.log(data.key,data.path)
         manager.upLoadFile(data.key,data.path).then(
             data => console.log('上传成功',data)
         ).catch(err =>{
