@@ -74,7 +74,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     }, [files])
     useEffect(() => {
         const editItem = files.find(file => file.id === editStatus)
-        if (enterPressed && editStatus && value.trim() !== '') { //按下回车键保存
+        //按下回车键保存
+        if (enterPressed && editStatus && value.trim() !== '') { 
             if (isSameName(value) === false) {
                 //保存之后重置状态 
                 //加上isNew是为了区分是新建文件的命名还是对已有文件的重命名
@@ -90,8 +91,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                 })
             }
         }
+        //按下esc关闭input框
         if (escPressed && editStatus) {
-            //按下esc关闭input框
             closeInput(editItem)
         }
     })

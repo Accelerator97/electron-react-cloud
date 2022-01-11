@@ -2,7 +2,9 @@ const { app, shell, ipcMain } = require('electron')
 const Store = require('electron-store')
 const settingsStore = new Store({ name: 'Settings'})
 
+//判断七牛config是否被设置过 ！！返回的是布尔值
 const qiniuIsConfiged =  ['accessKey', 'secretKey', 'bucketName'].every(key => !!settingsStore.get(key))
+//自动同步的状态切换
 let enableAutoSync = settingsStore.get('enableAutoSync')
 let template = [{
   label: '文件',

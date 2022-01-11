@@ -11,7 +11,6 @@ class QiniuManager {
         this.config = new qiniu.conf.Config();
         // 空间对应的机房
         this.config.zone = qiniu.zone.Zone_z0; //华东
-
         this.bucketManager = new qiniu.rs.BucketManager(this.mac, this.config);
 
     }

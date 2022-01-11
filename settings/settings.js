@@ -1,6 +1,7 @@
 const { remote, ipcRenderer } = require('electron')
 const Store = require('electron-store')
 const settingsStore = new Store({name: 'Settings'})
+//对应四个input框选择器
 const qiniuConfigArr = ['#savedFileLocation','#accessKey', '#secretKey', '#bucketName']
 
 const $ = (selector) => {
@@ -10,13 +11,12 @@ const $ = (selector) => {
 
 //模拟DOM加载完毕的过程
 document.addEventListener('DOMContentLoaded', () => {
-  //文件路径存储到electron.store
+  //从electron.store获取savedFileLocation，如果有值，赋值给savedFileLocation 对应的input框的value
   let savedLocation = settingsStore.get('savedFileLocation')
-  //先前有值 则地址
   if (savedLocation) {
     $('#savedFileLocation').value = savedLocation
   }
-  // get the saved config data and fill in the inputs
+  // 从electron.store读取值，排除第一项savedFileLocation 赋值给其他四个选择器
   qiniuConfigArr.forEach(selector => {
     const savedValue = settingsStore.get(selector.substr(1))
     if (savedValue) {
@@ -37,16 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
   //表单提交的时候
   $('#settings-form').addEventListener('submit', (e) => {
     e.preventDefault()
+    //从四个input框取值存储到electron store中
     qiniuConfigArr.forEach(selector => {
       if ($(selector)) {
         let { id, value } = $(selector)
         settingsStore.set(id, value ? value : '')
       }
     })
-    // sent a event back to main process to enable menu items if qiniu is configed
+    //当七牛的配置设置好之后向主进程发送事件 激活菜单项
     ipcRenderer.send('config-is-saved')
     remote.getCurrentWindow().close()
   })
+  //tab切换
   $('.nav-tabs').addEventListener('click', (e) => {
     e.preventDefault()
     $('.nav-link').forEach(element => {
