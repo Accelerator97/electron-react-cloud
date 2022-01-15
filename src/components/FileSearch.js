@@ -9,8 +9,8 @@ import useIpcRenderer from '../hooks/useIpcRender'
 const FileSearch = ({ title, onFileSearch }) => {
     const [inputActive, setInputActive] = useState(false)
     const [value, setValue] = useState('')
-    const enterPressed = useKeyPress(13)
-    const escPressed = useKeyPress(27)
+    const enterPressed = useKeyPress(13) //回车键
+    const escPressed = useKeyPress(27) //esc键位
     const node = useRef(null)
     const startSearch = () => {
         setInputActive(true)
@@ -29,18 +29,6 @@ const FileSearch = ({ title, onFileSearch }) => {
         if(escPressed && inputActive){
             closeSearch()
         }
-        // const handleInputEvent = (event) => {
-        //     const { keyCode } = event
-        //     if (keyCode === 13 && inputActive) { //点击搜索之后，展示input框，按下回车，调用回调函数onFileSearch
-        //         onFileSearch(value)
-        //     } else if (keyCode === 27 && inputActive) { //按下esc,清空输入内容，重置InputActive状态
-        //         closeSearch(event)
-        //     }
-        // }
-        // document.addEventListener('keyup', handleInputEvent) //注册监听事件
-        // return () => {
-        //     document.removeEventListener('keyup', handleInputEvent) //有注册就要有移除
-        // }
     })
     //自动获取焦点
     useEffect(() => {

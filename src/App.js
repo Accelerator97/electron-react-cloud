@@ -12,6 +12,8 @@ import FileSearch from './components/FileSearch'
 import FileList from './components/FileList';
 import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
+import useKeyPress from './hooks/useKeyPress'
+
 
 const { join, basename, extname, dirname } = window.require('path')
 const { remote, ipcRenderer } = window.require('electron')
@@ -68,7 +70,12 @@ function App() {
   //通过remote模块从electron的主进程拿到getPath API  即文件存放的地方
   const savedLocation = settingsStore.get('saveFileLocation') || remote.app.getPath('documents')
 
+  //按下左右箭头
+  const leftArrowPressed = useKeyPress(37)
+  const rightArrowPressed = useKeyPress(39)
 
+
+  //点击文件
   const fileClick = (fileId) => {
     setActiveFileId(fileId)
     const currentFile = files[fileId]
@@ -121,7 +128,6 @@ function App() {
       spellChecker: false,
     };
   }, []);
-
 
   const deleteFile = (id) => {
     if (files[id].isNew) { //只是刚刚创建还没存到electron-store中
@@ -260,6 +266,37 @@ function App() {
     'save-edit-file': saveCurrentFile,
     'active-file-uploaded': activeFileUploaded
   })
+
+  useEffect(() => {
+    if (leftArrowPressed && openFileIds.length > 0) {
+      //查找当前tab打开的文档在传进来的files数组中对应的下标，目的是给键盘事件左右键切换tab打开文档用
+      const activeFileIndex = openFileIds.findIndex(item => item === activeFileId)
+      if (activeFileIndex !== 0) {
+        const newActiveFileIndex = activeFileIndex - 1
+        const newActiveFileId = openFileIds[newActiveFileIndex]
+        setActiveFileId(newActiveFileId)
+        console.log('---------------------开始')
+        console.log('已经打开的文件的下标',activeFileIndex)
+        console.log('将要打开的文件的下标', newActiveFileIndex)
+        console.log('---------------------结束')
+
+      }
+    }
+    if (rightArrowPressed && openFileIds.length > 0) {
+      //查找当前tab打开的文档在传进来的files数组中对应的下标，目的是给键盘事件左右键切换tab打开文档用
+      const activeFileIndex = openFileIds.findIndex(item => item === activeFileId)
+      if (activeFileIndex <= openFileIds.length - 1) {
+        const newActiveFileIndex = activeFileIndex + 1
+        const newActiveFileId = openFileIds[newActiveFileIndex]
+        setActiveFileId(newActiveFileId)
+        console.log('---------------------开始')
+        console.log('已经打开的文件的下标',activeFileIndex)
+        console.log('将要打开的文件的下标', newActiveFileIndex)
+        console.log('---------------------结束')
+      }
+    }
+  })
+
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
@@ -296,7 +333,7 @@ function App() {
         <div className="col-9  right-panel">
           {!activeFile &&
             <div className="start-page">
-              <span class="start-page-word">选择或者新建markdown文档</span>
+              <span className="start-page-word">选择或者新建markdown文档</span>
             </div>
           }
           {activeFile &&
@@ -312,18 +349,11 @@ function App() {
                 ></TabList>
               </div>
               <div className="editor-container">
-                <ReactQuill 
-                  theme="snow" 
-                  value={activeFile && activeFile.body} 
-                  onChange={(value)=>fileChange(activeFile.id,value)} 
-                />
-                {/* <SimpleMDE
+                <ReactQuill
+                  theme="snow"
                   value={activeFile && activeFile.body}
                   onChange={(value) => fileChange(activeFile.id, value)}
-                  options={{ ...autofocusNoSpellcheckerOptions }}
-                  key={activeFile && activeFile.id}
-                  className='editor'
-                /> */}
+                />
               </div>
               {activeFile.isSynced &&
                 <div className='sync-status'>

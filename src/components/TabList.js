@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import classNames from 'classnames'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -6,7 +6,7 @@ import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import './TabList.scss'
 
 const TabList = ({ files, activeId, unSaveIds, onTabClick, onCloseTab }) => {
-
+   
     return (
         <ul className='nav nav-pills tablist-wrapper'>
             {

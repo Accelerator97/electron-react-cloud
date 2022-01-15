@@ -25,6 +25,5 @@ export const getParentNode = (node,parentClassName)=>{
 export const timeStampToString=(timeStamp)=>{
     const date = new Date(timeStamp)
     return date.toLocaleDateString() + '' + date.toLocaleTimeString()
-
 }
 

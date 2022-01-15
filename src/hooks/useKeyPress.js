@@ -1,17 +1,19 @@
 import React,{useState,useEffect} from 'react'
+import debounce from '../utils/debounce'
+
 const useKeyPress = (targetKeyCode)=>{
     const [keyPressed,setKeyPressed] = useState(false)//确认键盘是否被按下
 
-    const keyDownHandler = ({keyCode}) =>{
+    const keyDownHandler = debounce(({keyCode}) =>{
         if(keyCode === targetKeyCode){
             setKeyPressed(true)  //按下时设置为true
         } 
-    }
-    const keyUpHandler = ({keyCode}) =>{
+    },200)
+    const keyUpHandler = debounce(({keyCode}) =>{
         if(keyCode === targetKeyCode){
             setKeyPressed(false) //弹起时设置为false
         }
-    }
+    },200)
     useEffect(()=>{
         document.addEventListener('keydown',keyDownHandler)
         document.addEventListener('keyup',keyUpHandler)
