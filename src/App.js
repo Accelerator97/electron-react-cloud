@@ -1,11 +1,11 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import './App.scss';
-import 'bootstrap/dist/css/bootstrap.min.css'
-import "easymde/dist/easymde.min.css";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-quill/dist/quill.snow.css';
+import ReactQuill from 'react-quill';
 import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons'
-import SimpleMDE from "react-simplemde-editor";
 import { v4 as uuidv4 } from 'uuid';
-import { flattenArr, objToArr } from './utils/helper'
+import { flattenArr, objToArr, timeStampToString } from './utils/helper'
 import { fileHelper } from './utils/fileHelper'
 import useIpcRenderer from './hooks/useIpcRender';
 import FileSearch from './components/FileSearch'
@@ -14,7 +14,7 @@ import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 
 const { join, basename, extname, dirname } = window.require('path')
-const { remote,ipcRenderer } = window.require('electron')
+const { remote, ipcRenderer } = window.require('electron')
 //electron-store
 const Store = window.require('electron-store')
 const fileStore = new Store({ name: 'Files Data' })
@@ -24,12 +24,14 @@ const settingsStore = new Store({ name: 'Settings' })
 const saveFilesToStore = (files) => {
   //不用把files的所有信息存储到store，只需要id,path,title,createdAt
   const filesStoreObj = objToArr(files).reduce((result, file) => {
-    const { id, path, title, createdAt } = file
+    const { id, path, title, createdAt, isSynced, updatedAt } = file
     result[id] = {
       id,
       path,
       title,
-      createdAt
+      createdAt,
+      isSynced,
+      updatedAt
     }
     return result
   }, {})
@@ -138,24 +140,24 @@ function App() {
   }
 
   const updateFileName = (id, title, isNew) => {
-      //如果是新创建的文件，路径就是savaLocation+title.md
-      //如果不是新文件，路径是old dirname + new title
-      const newPath = isNew ? join(savedLocation, `${title}.md`) : join(dirname(files[id].path), `${title}.md`)
-      const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
-      const newFiles = { ...files, [id]: modifiledFile }
-      //如果是新建立的文件
-      if (isNew) {
-        fileHelper.writeFile(newPath, files[id].body).then(() => {
-          setFiles(newFiles)
-          saveFilesToStore(newFiles)
-        })
-      } else { //对已有的文件重命名
-        const oldPath = files[id].path
-        fileHelper.renameFile(oldPath, newPath).then(() => {
-          setFiles(newFiles)
-          saveFilesToStore(newFiles)
-        })
-      }
+    //如果是新创建的文件，路径就是savaLocation+title.md
+    //如果不是新文件，路径是old dirname + new title
+    const newPath = isNew ? join(savedLocation, `${title}.md`) : join(dirname(files[id].path), `${title}.md`)
+    const modifiledFile = { ...files[id], title, isNew: false, path: newPath }
+    const newFiles = { ...files, [id]: modifiledFile }
+    //如果是新建立的文件
+    if (isNew) {
+      fileHelper.writeFile(newPath, files[id].body).then(() => {
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
+      })
+    } else { //对已有的文件重命名
+      const oldPath = files[id].path
+      fileHelper.renameFile(oldPath, newPath).then(() => {
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
+      })
+    }
   }
 
   const fileSearch = (keyword) => {
@@ -183,11 +185,11 @@ function App() {
 
   //保存文件
   const saveCurrentFile = () => {
-    const {path,body,title} = activeFile
+    const { path, body, title } = activeFile
     fileHelper.writeFile(path, body).then(() => {
       setUnSaveFileIds(unSaveFileIds.filter(id => id !== activeFile.id))
-      if(getAutoSync){
-        ipcRenderer.send('upload-file',{key:`${title}.md`,path})
+      if (getAutoSync) {
+        ipcRenderer.send('upload-file', { key: `${title}.md`, path })
       }
     })
   }
@@ -207,7 +209,7 @@ function App() {
       if (Array.isArray(paths)) {
         const filteredPaths = paths.filter(path => {
           const alreadyAdded = Object.values(files).find(file => { //Object.values把values组成一个数组
-            return file.path === path  
+            return file.path === path
             //find() 方法返回数组中满足提供的测试函数的第一个元素的值。否则返回 undefined
           })
           return !alreadyAdded
@@ -241,10 +243,22 @@ function App() {
       }
     })
   }
+
+  //上传成功之后更新状态 然后更新state和本地store
+  const activeFileUploaded = () => {
+    const { id } = activeFile
+    const modifiledFile = { ...files[id], isSynced: true, updatedAt: new Date().getTime() }
+    const newFiles = { ...files, [id]: modifiledFile }
+    console.log('更新本地')
+    setFiles(newFiles)
+    saveFilesToStore(newFiles)
+  }
+
   useIpcRenderer({
     'create-new-file': createFiles,
     'import-file': importFiles,
     'save-edit-file': saveCurrentFile,
+    'active-file-uploaded': activeFileUploaded
   })
   return (
     <div className="App container-fluid px-0">
@@ -258,8 +272,8 @@ function App() {
             onSaveEdit={updateFileName}
           >
           </FileList>
-          <div className="row no-gutters button-group no-border">
-            <div className="col">
+          <div className="row no-gutters button-group no-border mb-0">
+            <div className="col mb-0">
               <BottomBtn
                 text="新建"
                 colorClass="btn-primary"
@@ -268,7 +282,7 @@ function App() {
               >
               </BottomBtn>
             </div>
-            <div className="col">
+            <div className="col mb-0">
               <BottomBtn
                 text="导入"
                 colorClass="btn-success"
@@ -281,27 +295,41 @@ function App() {
         </div>
         <div className="col-9  right-panel">
           {!activeFile &&
-            <div className='start-page'>
-              选择或者新建markdown文档
+            <div className="start-page">
+              <span class="start-page-word">选择或者新建markdown文档</span>
             </div>
           }
           {activeFile &&
             <>
-              <TabList
-                files={openFiles}
-                onTabClick={tabClick}
-                activeId={activeFileId}
-                onCloseTab={tabClose}
-                unSaveIds={unSaveFileIds}
-                className="tabList"
-              ></TabList>
-              <SimpleMDE
-                value={activeFile && activeFile.body}
-                onChange={(value) => fileChange(activeFile.id, value)}
-                options={{ minHeight:"100%",...autofocusNoSpellcheckerOptions }}
-                key={activeFile && activeFile.id}
-                className='editor'
-              />
+              <div className="tab-list">
+                <TabList
+                  files={openFiles}
+                  onTabClick={tabClick}
+                  activeId={activeFileId}
+                  onCloseTab={tabClose}
+                  unSaveIds={unSaveFileIds}
+                  className="tabList"
+                ></TabList>
+              </div>
+              <div className="editor-container">
+                <ReactQuill 
+                  theme="snow" 
+                  value={activeFile && activeFile.body} 
+                  onChange={(value)=>fileChange(activeFile.id,value)} 
+                />
+                {/* <SimpleMDE
+                  value={activeFile && activeFile.body}
+                  onChange={(value) => fileChange(activeFile.id, value)}
+                  options={{ ...autofocusNoSpellcheckerOptions }}
+                  key={activeFile && activeFile.id}
+                  className='editor'
+                /> */}
+              </div>
+              {activeFile.isSynced &&
+                <div className='sync-status'>
+                  <span >已经同步，上次同步时间为{timeStampToString(activeFile.updatedAt)}</span>
+                </div>
+              }
             </>
           }
         </div>

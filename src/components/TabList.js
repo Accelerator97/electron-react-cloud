@@ -8,7 +8,7 @@ import './TabList.scss'
 const TabList = ({ files, activeId, unSaveIds, onTabClick, onCloseTab }) => {
 
     return (
-        <ul className='nav nav-pills tablist-component'>
+        <ul className='nav nav-pills tablist-wrapper'>
             {
                 files.map(file => {
                     //unSaveIds是一个字符串数组,用来存储未保存的文章id

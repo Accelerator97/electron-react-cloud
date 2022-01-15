@@ -22,3 +22,9 @@ export const getParentNode = (node,parentClassName)=>{
     return false
 }
 
+export const timeStampToString=(timeStamp)=>{
+    const date = new Date(timeStamp)
+    return date.toLocaleDateString() + '' + date.toLocaleTimeString()
+
+}
+

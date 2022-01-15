@@ -10,20 +10,31 @@
   cursor: pointer;
 }
 .start-page{
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-size: 30px;
   height: 100%;
-  line-height: 300px;
   color: #ccc;
-  text-align: center;
 }
 .left-panel {
   height: 100vh;
   position: relative;
   .button-group {
+    height: 5vh;
     position: absolute;
     width: 100%;
     bottom: 0;
   }
+  .file-list{
+    height: 90vh;
+    overflow-y: auto;
+  }
+  .file-search{
+    height: 5vh;
+  }
+  //隐藏滚动条
+  .file-list::-webkit-scrollbar { width: 0 !important }
 }
 .no-border{
   border-radius: 0!important;
@@ -31,13 +42,33 @@
 .right-panel{
   height: 100vh;
   position: relative;
-  .CodeMirror-wrap{
+  .tab-list{
+    height: 8vh;
+    overflow-x:auto;
+  }
+  > .editor-container{
     position: absolute;
-    top: calc(40px + 49px);
+    top: 40px;
     bottom: 0;
     left: 0;
     right: 0;
-    height: calc(100% - 40px);
+    height: 92vh;
+    > .editor{
+      > .EasyMDEContainer .CodeMirror{
+        height: calc(92vh - 50px - 16px);
+        padding-bottom: 16px;
+        .CodeMirror-vscrollbar{
+          display: none!important;
+        }
+      }
+    }
+  }
+  > .sync-status{
+    font-size: 12px;
+    color: #959694;
+    position: absolute;
+    bottom: 0px;
+    left: 10px;
   }
 }
 

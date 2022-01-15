@@ -52,7 +52,7 @@ const FileSearch = ({ title, onFileSearch }) => {
         'search-file':startSearch
     })
     return (
-        <div className='alert alert-primary d-flex justify-content-between align-items-center mb-0'>
+        <div className='alert alert-primary d-flex justify-content-between align-items-center mb-0 file-search'>
             {!inputActive &&
                 <>
                     <span className='col-8' style={{ height: "38px" ,lineHeight:"38px" }}>{title}</span>

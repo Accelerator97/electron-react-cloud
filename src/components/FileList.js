@@ -6,6 +6,7 @@ import PropTypes from 'prop-types'
 import useKeyPress from '../hooks/useKeyPress'
 import useContextMenu from '../hooks/useContextMenu'
 import { getParentNode } from '../utils/helper'
+import './FileList.scss'
 
 //引入nodejs 
 const { remote } = window.require('electron')
@@ -97,7 +98,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
         }
     })
     return (
-        <ul className="list-group list-group-flush file-list" >
+        <ul className="list-group list-group-flush file-list file-list" >
             {
                 files.map((file) => {
                     return (
