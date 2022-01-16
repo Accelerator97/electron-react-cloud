@@ -1,4 +1,6 @@
-.tablist-wrapper{
+.tablist-wrapper {
+    display: flex;
+    flex-wrap: nowrap!important;
     border: none;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
@@ -29,9 +31,4 @@
            display: none;
         }
     }
-}
-
-.nav{
-    flex-wrap: nowrap;
-    overflow-x: auto;
 }

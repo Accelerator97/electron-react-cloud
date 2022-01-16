@@ -15,6 +15,7 @@ import TabList from './components/TabList';
 import useKeyPress from './hooks/useKeyPress'
 
 
+
 const { join, basename, extname, dirname } = window.require('path')
 const { remote, ipcRenderer } = window.require('electron')
 //electron-store
@@ -74,6 +75,8 @@ function App() {
   const leftArrowPressed = useKeyPress(37)
   const rightArrowPressed = useKeyPress(39)
 
+  //查找activeFileId对应的index
+  const activeFileIndex = openFileIds.findIndex(item => item === activeFileId)
 
   //点击文件
   const fileClick = (fileId) => {
@@ -93,8 +96,29 @@ function App() {
     }
   }
 
+  //鼠标点击tab
   const tabClick = (fileId) => {
+    console.log('当前APP组件中要打开的index',openFiles.findIndex(item=>item.id ===fileId))
     setActiveFileId(fileId)
+  }
+
+  // //左箭头切换tab
+  const activeFileIndexDecreased = (activeFileId) => {
+    //查找activeFileId对应的index
+    const newActiveFileIndex = activeFileIndex - 1
+    const newActiveFileId = openFileIds[newActiveFileIndex]
+    setTimeout(() => {
+      tabClick(newActiveFileId)
+    }, 200);
+  }
+  // //右箭头切换tab
+  const activeFileIndexIncreased = (activeFileId) => {
+    if(activeFileIndex === openFileIds.length -1) {return}
+    const newActiveFileIndex = activeFileIndex + 1
+    const newActiveFileId = openFileIds[newActiveFileIndex]
+    setTimeout(() => {
+      tabClick(newActiveFileId)
+    }, 200);
   }
 
   // 点击tab的关闭icon 把id从openFileId中删除,同时高亮第一项
@@ -121,13 +145,6 @@ function App() {
       }
     }
   })
-  //解决bug:当输入一个字符后，不会自动获取焦点
-  const autofocusNoSpellcheckerOptions = useMemo(() => {
-    return {
-      autofocus: true,
-      spellChecker: false,
-    };
-  }, []);
 
   const deleteFile = (id) => {
     if (files[id].isNew) { //只是刚刚创建还没存到electron-store中
@@ -266,37 +283,14 @@ function App() {
     'save-edit-file': saveCurrentFile,
     'active-file-uploaded': activeFileUploaded
   })
-
   useEffect(() => {
-    if (leftArrowPressed && openFileIds.length > 0) {
-      //查找当前tab打开的文档在传进来的files数组中对应的下标，目的是给键盘事件左右键切换tab打开文档用
-      const activeFileIndex = openFileIds.findIndex(item => item === activeFileId)
-      if (activeFileIndex !== 0) {
-        const newActiveFileIndex = activeFileIndex - 1
-        const newActiveFileId = openFileIds[newActiveFileIndex]
-        setActiveFileId(newActiveFileId)
-        console.log('---------------------开始')
-        console.log('已经打开的文件的下标',activeFileIndex)
-        console.log('将要打开的文件的下标', newActiveFileIndex)
-        console.log('---------------------结束')
-
-      }
+    if (leftArrowPressed && openFiles.length > 0 && activeFileIndex !==0) {
+      activeFileIndexDecreased(activeFileId)
     }
-    if (rightArrowPressed && openFileIds.length > 0) {
-      //查找当前tab打开的文档在传进来的files数组中对应的下标，目的是给键盘事件左右键切换tab打开文档用
-      const activeFileIndex = openFileIds.findIndex(item => item === activeFileId)
-      if (activeFileIndex <= openFileIds.length - 1) {
-        const newActiveFileIndex = activeFileIndex + 1
-        const newActiveFileId = openFileIds[newActiveFileIndex]
-        setActiveFileId(newActiveFileId)
-        console.log('---------------------开始')
-        console.log('已经打开的文件的下标',activeFileIndex)
-        console.log('将要打开的文件的下标', newActiveFileIndex)
-        console.log('---------------------结束')
-      }
+    if (rightArrowPressed && openFiles.length > 0 && activeFileIndex < openFiles.length) {
+      activeFileIndexIncreased(activeFileId)
     }
   })
-
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
@@ -345,7 +339,8 @@ function App() {
                   activeId={activeFileId}
                   onCloseTab={tabClose}
                   unSaveIds={unSaveFileIds}
-                  className="tabList"
+                  onTabIndexDecreased={ activeFileIndexDecreased}
+                  onTabIndexIncreased={ activeFileIndexIncreased}
                 ></TabList>
               </div>
               <div className="editor-container">
@@ -353,6 +348,7 @@ function App() {
                   theme="snow"
                   value={activeFile && activeFile.body}
                   onChange={(value) => fileChange(activeFile.id, value)}
+                  key={activeFile && activeFile.id}
                 />
               </div>
               {activeFile.isSynced &&

@@ -45,7 +45,9 @@
   .tab-list{
     height: 8vh;
     overflow-x:auto;
+    &::-webkit-scrollbar{display: none;}
   }
+  
   > .editor-container{
     position: absolute;
     top: 40px;
