@@ -27,12 +27,12 @@
     bottom: 0;
   }
   .file-list{
-    height: 90vh;
+    height: 87vh;
     overflow-y: auto;
     &::-webkit-scrollbar { width: 0 !important }
   }
   .file-search{
-    height: 5vh;
+    height: 8vh;
   }
 }
 .no-border{

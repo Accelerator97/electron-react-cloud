@@ -6,6 +6,7 @@ const path = require('path')
 const Store = require('electron-store')
 const QiniuManager = require('./src/utils/QiniuManager')
 const settingsStore = new Store({ name: 'Settings' })
+const fileStore = new Store({ name: 'Files Data' })
 
 let mainWindow, settingWindow
 const createManager = () => {
@@ -79,5 +80,38 @@ app.on('ready', () => {
             dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
             console.log(err)
         })
+    })
+
+    ipcMain.on('download-file', (event, data) => {
+        console.log('2222222')
+        const manager = createManager()
+        const filesObj = fileStore.get('files')
+        const { key, path, id } = data
+        manager.getStat(data.key).then((res) => {
+            console.log('云端文件', res)
+            console.log('本地文件', filesObj[data.id])
+            //普及下TimeStamp 从1970年1月1日到现在的秒数
+            //1秒=1000毫秒 1毫秒 = 1000微秒  1微秒 = 1000 纳秒
+            //puttime是七牛云文档中提示的文件创建时间，单位是100纳秒
+            const serverUpdatedTIme = Math.round(res.putTime  / 10000 )
+            const localUpdatedTime = filesObj[id].updatedAt
+            console.log(serverUpdatedTIme,'服务器时间')
+            console.log(localUpdatedTime,'本地时间')
+            if(serverUpdatedTIme > localUpdatedTime || !localUpdatedTime){
+                console.log('new File')
+                manager.downLoadFile(key,path).then(()=>{
+                    mainWindow.webContents.send('file-downloaded',{status:'downloaed-success',id})
+                })
+            }else{
+                console.log('no new file')
+                mainWindow.webContents.send('file-downloaded',{status:'no-new-file',id})
+            }
+        }, (err) => {
+            if (err.status === 612) {
+                mainWindow.webContents.send('file-downloaded', { status: 'no-file',id})
+            }
+            console.log(err)
+        })
+
     })
 })

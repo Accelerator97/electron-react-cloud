@@ -82,6 +82,11 @@ class QiniuManager {
             return Promise.reject({ err: err.response })
         })
     }
+    getStat(key){
+        return new Promise((resolve,reject)=>{
+            this.bucketManager.stat(this.bucket,key,this._handleCallback(resolve,reject))
+        })
+    }
     //接受两个参数(resolve,reject)，然后返回接受三个参数的函数，这个函数可以调用resolve和reject
     _handleCallback(resolve, reject) {
         return (err, respBody, respInfo) => {

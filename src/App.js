@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-quill/dist/quill.snow.css';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { faPlus, faFileImport} from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
 import { v4 as uuidv4 } from 'uuid';
 import { flattenArr, objToArr, timeStampToString } from './utils/helper'
 import { fileHelper } from './utils/fileHelper'
@@ -42,6 +42,7 @@ const saveFilesToStore = (files) => {
 }
 
 //判断是否设置了七牛云自动上传的参数 以及勾选了自动上传的按钮
+//!!表示取布尔值 
 const getAutoSync = () => ['accessKey', 'secretKey', 'bucketName', 'enableAutoSync'].every(key => !!settingsStore.get(key))
 
 function App() {
@@ -82,23 +83,30 @@ function App() {
   const fileClick = (fileId) => {
     setActiveFileId(fileId)
     const currentFile = files[fileId]
+    const {id,title,path,isLoaded}= currentFile
     //第一次打开文件 状态设置为isLoaded:true，下一次打开isLoaded为true,就不用调用fs读取文件
-    if (!currentFile.isLoaded) {
-      fileHelper.readFile(currentFile.path).then((value) => {
-        const newFile = { ...files[fileId], body: value, isLoaded: true }
-        setFiles({ ...files, [fileId]: newFile })
-      },(err)=>{
-        remote.dialog.showMessageBox({
-          type: 'info',
-          title: `文件读取错误`,
-          message: `文件读取错误`
+    if (!isLoaded) {
+      if (getAutoSync) { //如果配置了七牛参数并且开启自动同步，则先从云端下载最新文件
+        console.log('1111')
+        ipcRenderer.send('download-file', { key: `${title}.md`, path, id })
+      } else {
+        fileHelper.readFile(path).then((value) => {
+          const newFile = { ...files[fileId], body: value, isLoaded: true }
+          setFiles({ ...files, [fileId]: newFile })
+        }, (err) => {
+          remote.dialog.showMessageBox({
+            type: 'info',
+            title: `文件读取错误`,
+            message: `文件读取错误`
+          })
+          //如果读取不到，可能是用户本地已经删除，要更新列表
+          const { [fileId]: value, ...afterDelete } = files
+          setFiles(afterDelete)
+          saveFilesToStore(afterDelete)
+          return
         })
-        //如果读取不到，可能是用户本地已经删除，要更新列表
-        const { [fileId]: value, ...afterDelete } = files
-        setFiles(afterDelete)
-        saveFilesToStore(afterDelete)
-        return
-      })
+      }
+
     }
 
     //先判断openFileId是否包括fileId，然后tab打开file
@@ -123,7 +131,7 @@ function App() {
   }
   // //右箭头切换tab
   const activeFileIndexIncreased = () => {
-    if(activeFileIndex === openFileIds.length -1) {return}
+    if (activeFileIndex === openFileIds.length - 1) { return }
     const newActiveFileIndex = activeFileIndex + 1
     const newActiveFileId = openFileIds[newActiveFileIndex]
     setTimeout(() => {
@@ -144,7 +152,7 @@ function App() {
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
   //前面的事件绑定onClick={xxx} onClick={(value)=>{fileChange(id,value)}}
   //fileChange做两件事情 1.更新file的body  2.显示未保存的小红点
-  const fileChange = ((id,value) => {
+  const fileChange = ((id, value) => {
     if (value !== files[id].body) {
       //不要直接通过files[id].body =value 修改files 要通过setFiles修改
       const newFiles = { ...files[id], body: value }
@@ -286,15 +294,30 @@ function App() {
     setFiles(newFiles)
     saveFilesToStore(newFiles)
   }
-
+  const activeFileDownLoaded =(event,message)=>{
+    const currentFile = files[message.id]
+    const {id,path } = currentFile
+    fileHelper.readFile(path).then((value)=>{
+      let newFile
+      if(message.status === 'downloaed-success'){
+        newFile = {...files[id],body:value,isLoaded:true,isSynced:true,updatedAt:new Date().gettime()}
+      }else{
+        newFile = {...files[id],body:value,isLoaded:true}
+      }
+      const newFiles= {...files,[id]:newFile}
+      setFiles(newFiles)
+      saveFilesToStore(newFiles)
+    })
+  }
   useIpcRenderer({
     'create-new-file': createFiles,
     'import-file': importFiles,
     'save-edit-file': saveCurrentFile,
-    'active-file-uploaded': activeFileUploaded
+    'active-file-uploaded': activeFileUploaded,
+    'file-downloaded':activeFileDownLoaded
   })
   useEffect(() => {
-    if (leftArrowPressed && openFiles.length > 0 && activeFileIndex !==0) {
+    if (leftArrowPressed && openFiles.length > 0 && activeFileIndex !== 0) {
       activeFileIndexDecreased(activeFileId)
     }
     if (rightArrowPressed && openFiles.length > 0 && activeFileIndex < openFiles.length) {
@@ -349,15 +372,15 @@ function App() {
                   activeId={activeFileId}
                   onCloseTab={tabClose}
                   unSaveIds={unSaveFileIds}
-                  onTabIndexDecreased={ activeFileIndexDecreased}
-                  onTabIndexIncreased={ activeFileIndexIncreased}
+                  onTabIndexDecreased={activeFileIndexDecreased}
+                  onTabIndexIncreased={activeFileIndexIncreased}
                 ></TabList>
               </div>
               <div className="editor-container">
                 <ReactQuill
                   theme="snow"
                   value={activeFile && activeFile.body || ''}
-                  onChange={(value) => fileChange(activeFile.id,value)}
+                  onChange={(value) => fileChange(activeFile.id, value)}
                   key={activeFile && activeFileId}
                 />
               </div>

@@ -13,7 +13,6 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^0.24.0",
     "bootstrap": "^4.3.1",
-    "braft-editor": "^2.3.9",
     "qiniu": "^7.4.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -27,7 +26,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "onlyEle": "nodemon --watch main.js --watch src/menuTemplate.js --exec \"electron .\"",
+    "onlyEle": "nodemon --watch main.js --watch src/menuTemplate.js --exec \"electron .",
     "dev": "concurrently \"wait-on http://localhost:3000 && electron .\" \"cross-env BROWSER=none npm start\""
   },
   "eslintConfig": {
@@ -55,6 +54,7 @@
     "electron": "^5.0.6",
     "electron-is-dev": "^1.1.0",
     "electron-store": "^4.0.0",
+    "nodemon": "^2.0.15",
     "sass": "^1.47.0",
     "wait-on": "^6.0.0"
   }
