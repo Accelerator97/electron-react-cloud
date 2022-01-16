@@ -43,7 +43,7 @@ const FileSearch = ({ title, onFileSearch }) => {
         <div className='alert alert-primary d-flex justify-content-between align-items-center mb-0 file-search'>
             {!inputActive &&
                 <>
-                    <span className='col-8' style={{ height: "38px" ,lineHeight:"38px" }}>{title}</span>
+                    <span className='col-8' style={{ height: "35px" ,lineHeight:"35px" }}>{title}</span>
                     <button type="button" className='icon-button' onClick={() => { setInputActive(true) }}>
                         <FontAwesomeIcon title="搜索" icon={faSearch} size="lg"></FontAwesomeIcon>
                     </button>

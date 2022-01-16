@@ -2,8 +2,9 @@ import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import './App.scss';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-quill/dist/quill.snow.css';
-import ReactQuill from 'react-quill';
-import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons'
+import ReactQuill, { Quill } from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { faPlus, faFileImport} from '@fortawesome/free-solid-svg-icons'
 import { v4 as uuidv4 } from 'uuid';
 import { flattenArr, objToArr, timeStampToString } from './utils/helper'
 import { fileHelper } from './utils/fileHelper'
@@ -13,7 +14,6 @@ import FileList from './components/FileList';
 import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 import useKeyPress from './hooks/useKeyPress'
-
 
 
 const { join, basename, extname, dirname } = window.require('path')
@@ -87,6 +87,17 @@ function App() {
       fileHelper.readFile(currentFile.path).then((value) => {
         const newFile = { ...files[fileId], body: value, isLoaded: true }
         setFiles({ ...files, [fileId]: newFile })
+      },(err)=>{
+        remote.dialog.showMessageBox({
+          type: 'info',
+          title: `文件读取错误`,
+          message: `文件读取错误`
+        })
+        //如果读取不到，可能是用户本地已经删除，要更新列表
+        const { [fileId]: value, ...afterDelete } = files
+        setFiles(afterDelete)
+        saveFilesToStore(afterDelete)
+        return
       })
     }
 
@@ -98,12 +109,11 @@ function App() {
 
   //鼠标点击tab
   const tabClick = (fileId) => {
-    console.log('当前APP组件中要打开的index',openFiles.findIndex(item=>item.id ===fileId))
     setActiveFileId(fileId)
   }
 
   // //左箭头切换tab
-  const activeFileIndexDecreased = (activeFileId) => {
+  const activeFileIndexDecreased = () => {
     //查找activeFileId对应的index
     const newActiveFileIndex = activeFileIndex - 1
     const newActiveFileId = openFileIds[newActiveFileIndex]
@@ -112,7 +122,7 @@ function App() {
     }, 200);
   }
   // //右箭头切换tab
-  const activeFileIndexIncreased = (activeFileId) => {
+  const activeFileIndexIncreased = () => {
     if(activeFileIndex === openFileIds.length -1) {return}
     const newActiveFileIndex = activeFileIndex + 1
     const newActiveFileId = openFileIds[newActiveFileIndex]
@@ -134,12 +144,12 @@ function App() {
   //要接受两个参数，所以html部分事件绑定也和之前的事件绑定稍微不同
   //前面的事件绑定onClick={xxx} onClick={(value)=>{fileChange(id,value)}}
   //fileChange做两件事情 1.更新file的body  2.显示未保存的小红点
-  const fileChange = ((id, value) => {
+  const fileChange = ((id,value) => {
     if (value !== files[id].body) {
       //不要直接通过files[id].body =value 修改files 要通过setFiles修改
       const newFiles = { ...files[id], body: value }
       setFiles({ ...files, [id]: newFiles })
-      //更新unSaveFileId
+      //更新unSaveFileIds
       if (!unSaveFileIds.includes(id)) {
         setUnSaveFileIds([...unSaveFileIds, id])
       }
@@ -346,9 +356,9 @@ function App() {
               <div className="editor-container">
                 <ReactQuill
                   theme="snow"
-                  value={activeFile && activeFile.body}
-                  onChange={(value) => fileChange(activeFile.id, value)}
-                  key={activeFile && activeFile.id}
+                  value={activeFile && activeFile.body || ''}
+                  onChange={(value) => fileChange(activeFile.id,value)}
+                  key={activeFile && activeFileId}
                 />
               </div>
               {activeFile.isSynced &&

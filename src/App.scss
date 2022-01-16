@@ -29,48 +29,43 @@
   .file-list{
     height: 90vh;
     overflow-y: auto;
+    &::-webkit-scrollbar { width: 0 !important }
   }
   .file-search{
     height: 5vh;
   }
-  //隐藏滚动条
-  .file-list::-webkit-scrollbar { width: 0 !important }
 }
 .no-border{
   border-radius: 0!important;
 }
 .right-panel{
+  &::-webkit-scrollbar { width: 0 !important }
   height: 100vh;
   position: relative;
+  display: flex;
+  flex-direction: column;
   .tab-list{
-    height: 8vh;
+    height: 6vh;
     overflow-x:auto;
     &::-webkit-scrollbar{display: none;}
   }
   
   > .editor-container{
-    position: absolute;
-    top: 40px;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 92vh;
-    > .editor{
-      > .EasyMDEContainer .CodeMirror{
-        height: calc(92vh - 50px - 16px);
-        padding-bottom: 16px;
-        .CodeMirror-vscrollbar{
-          display: none!important;
+    height: calc(91vh - 20px);
+    > .quill{
+        height: 100%;
+        padding-bottom: 25px;
+        .ql-editor{
+          &::-webkit-scrollbar { width: 0 !important }
         }
-      }
     }
   }
   > .sync-status{
+    height: 2vh;
     font-size: 12px;
     color: #959694;
-    position: absolute;
-    bottom: 0px;
-    left: 10px;
+    position: fixed;
+    bottom: 5px;
   }
 }
 
