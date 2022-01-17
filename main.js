@@ -138,15 +138,32 @@ app.on('ready', () => {
         })
     })
 
+    //删除文件
     ipcMain.on('delete-file', (event, data) => {
         const manager = createManager()
-        console.log('data',data)
+        console.log('data', data)
         manager.deleteFile(data).then((res) => {
-            console.log(res)
+            console.log('删除云端文件成功',res)
             mainWindow.webContents.send('delete-file', { status: 'delete-file-success', id })
         }, (err) => {
             dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
             console.log(err)
         })
+    })
+
+    //文件重命名
+    ipcMain.on('update-file-name', (event, data) => {
+        console.log('data', data)
+        const {newName,oldName} = data
+        console.log('新文件名',newName)
+        console.log('旧文件名',oldName)
+        const manager = createManager()
+        manager.updateName(newName,oldName).then(res=>{
+            console.log(res)
+            console.log('更新云端文件名成功')
+        }).catch(err=>{
+            console.log('更新云端文件名失败')
+        })
+        console.log('执行完毕')
     })
 })

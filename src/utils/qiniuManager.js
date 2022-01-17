@@ -38,13 +38,15 @@ class QiniuManager {
         })
     }
     //更新文件名
-    updateName(key){
+    updateName(newKey,oldKey){
+        console.log('新文件名',newKey)
+        console.log('旧文件名',oldKey)
         //强制覆盖已有同名文件
         var options = {
             force: true
-          }
+        }
         return new Promise((resolve,reject)=>{
-            this.bucketManager.move(this.bucket,key.oldName,this.bucket,key.newName,options,this._handleCallback(resolve,reject))
+            this.bucketManager.move(this.bucket,oldKey,this.bucket,newKey,options,this._handleCallback(resolve,reject))
         })
     }
     getBucketDomain() {

@@ -178,8 +178,8 @@ function App() {
         saveFilesToStore(afterDelete)
         //如果file已经在tab打开 
         tabClose(id)
-        if(getAutoSync && files[id].isSynced){
-          ipcRenderer.send('delete-file',`${files[id].title}.md`)
+        if (getAutoSync && files[id].isSynced) {
+          ipcRenderer.send('delete-file', `${files[id].title}.md`)
         }
       })
     }
@@ -199,11 +199,17 @@ function App() {
       })
     } else { //对已有的文件重命名
       const oldPath = files[id].path
+      const oldName = files[id].title
+      if (getAutoSync && files[id].isSynced) {
+          ipcRenderer.send('update-file-name', { oldName: `${oldName}.md`, newName: `${title}.md` })
+      }
       fileHelper.renameFile(oldPath, newPath).then(() => {
         setFiles(newFiles)
         saveFilesToStore(newFiles)
       })
     }
+
+
   }
 
   const fileSearch = (keyword) => {
