@@ -14,7 +14,7 @@ import FileList from './components/FileList';
 import BottomBtn from './components/BottomBtn';
 import TabList from './components/TabList';
 import useKeyPress from './hooks/useKeyPress'
-
+import Loader from './components/Loading'
 
 const { join, basename, extname, dirname } = window.require('path')
 const { remote, ipcRenderer } = window.require('electron')
@@ -56,6 +56,8 @@ function App() {
   const [unSaveFileIds, setUnSaveFileIds] = useState([])
   //搜索文件形成的数组
   const [searchFiles, setSearchFiles] = useState([])
+  //控制loading组件显示
+  const [loading,setLoading] = useState(false)
 
   //还得把files从obj转为数组
   const filesObjtoArr = objToArr(files)
@@ -87,7 +89,6 @@ function App() {
     //第一次打开文件 状态设置为isLoaded:true，下一次打开isLoaded为true,就不用调用fs读取文件
     if (!isLoaded) {
       if (getAutoSync) { //如果配置了七牛参数并且开启自动同步，则先从云端下载最新文件
-        console.log('1111')
         ipcRenderer.send('download-file', { key: `${title}.md`, path, id })
       } else {
         fileHelper.readFile(path).then((value) => {
@@ -294,6 +295,7 @@ function App() {
     setFiles(newFiles)
     saveFilesToStore(newFiles)
   }
+  //下载文件到本地之后更新state和本地store
   const activeFileDownLoaded =(event,message)=>{
     const currentFile = files[message.id]
     const {id,path } = currentFile
@@ -309,13 +311,37 @@ function App() {
       saveFilesToStore(newFiles)
     })
   }
+  //改变loading状态
+  const changeLoadingStatus = (event,message) => {
+    setLoading(message)
+  }
+ 
+  //全部文件同步到七牛云后更新本地文件状态
+  const filesUploaded = (event,message) => {
+    const newFiles = objToArr(files).reduce((result,file)=>{
+      const currentTime = new Date().getTime()
+      result[file.id] = {
+        ...files[file.id],
+        isSynced:true,
+        updatedAt:currentTime
+      }
+      return result
+    },{})
+    setFiles(newFiles)
+    saveFilesToStore(newFiles)
+  }
+
   useIpcRenderer({
     'create-new-file': createFiles,
     'import-file': importFiles,
     'save-edit-file': saveCurrentFile,
     'active-file-uploaded': activeFileUploaded,
-    'file-downloaded':activeFileDownLoaded
+    'file-downloaded':activeFileDownLoaded,
+    'loading-status':changeLoadingStatus,
+    'files-uploaded':filesUploaded
   })
+
+  //监听键盘事件
   useEffect(() => {
     if (leftArrowPressed && openFiles.length > 0 && activeFileIndex !== 0) {
       activeFileIndexDecreased(activeFileId)
@@ -324,8 +350,12 @@ function App() {
       activeFileIndexIncreased(activeFileId)
     }
   })
+
   return (
     <div className="App container-fluid px-0">
+      {loading && 
+        <Loader></Loader>
+      }
       <div className="row no-gutters">
         <div className="col-3 left-panel">
           <FileSearch title="我的云文档" onFileSearch={fileSearch}></FileSearch>
