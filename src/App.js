@@ -199,17 +199,15 @@ function App() {
       })
     } else { //对已有的文件重命名
       const oldPath = files[id].path
-      const oldName = files[id].title
-      if (getAutoSync && files[id].isSynced) {
-          ipcRenderer.send('update-file-name', { oldName: `${oldName}.md`, newName: `${title}.md` })
-      }
+      const oldName = files[id].title 
       fileHelper.renameFile(oldPath, newPath).then(() => {
         setFiles(newFiles)
         saveFilesToStore(newFiles)
+        if (getAutoSync && files[id].isSynced) {
+          ipcRenderer.send('update-file-name', { oldName: `${oldName}.md`, newName: `${title}.md` })
+      }
       })
     }
-
-
   }
 
   const fileSearch = (keyword) => {
@@ -304,7 +302,6 @@ function App() {
     const newFiles = { ...files, [id]: modifiledFile }
     setFiles(newFiles)
     saveFilesToStore(newFiles)
-    console.log('更新本地文件')
   }
 
   //单个文件下载到本地之后更新state和本地store
@@ -343,6 +340,14 @@ function App() {
     saveFilesToStore(newFiles)
   }
 
+  // 下载所有文件到本地
+  const downLoadAllfile = (event,{newFiles})=>{
+    setFiles(newFiles)
+    saveFilesToStore(newFiles)
+  }
+
+
+
   useIpcRenderer({
     'create-new-file': createFiles,
     'import-file': importFiles,
@@ -350,7 +355,8 @@ function App() {
     'active-file-uploaded': activeFileUploaded,
     'file-downloaded': activeFileDownLoaded,
     'loading-status': changeLoadingStatus,
-    'files-uploaded': filesUploaded
+    'files-uploaded': filesUploaded,
+    'files-downLoaded':downLoadAllfile
   })
 
   //监听键盘事件

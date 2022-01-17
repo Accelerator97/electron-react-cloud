@@ -38,21 +38,21 @@ class QiniuManager {
         })
     }
     //更新文件名
-    updateName(newKey,oldKey){
-        console.log('新文件名',newKey)
-        console.log('旧文件名',oldKey)
+    updateName(newKey, oldKey) {
+        console.log('新文件名', newKey)
+        console.log('旧文件名', oldKey)
         //强制覆盖已有同名文件
         var options = {
             force: true
         }
-        return new Promise((resolve,reject)=>{
-            this.bucketManager.move(this.bucket,oldKey,this.bucket,newKey,options,this._handleCallback(resolve,reject))
+        return new Promise((resolve, reject) => {
+            this.bucketManager.move(this.bucket, oldKey, this.bucket, newKey, options, this._handleCallback(resolve, reject))
         })
     }
+    //获取bucket对应的域名
     getBucketDomain() {
         const reqURL = `http://uc.qbox.me/v2/domains?tbl=${this.bucket}`
         const token = qiniu.util.generateAccessToken(this.mac, reqURL)
-        console.log('1')
         return new Promise((resolve, reject) => {
             qiniu.rpc.postWithoutForm(reqURL, token, this._handleCallback(resolve, reject))
         })
@@ -95,9 +95,25 @@ class QiniuManager {
             return Promise.reject({ err: err.response })
         })
     }
-    getStat(key){
-        return new Promise((resolve,reject)=>{
-            this.bucketManager.stat(this.bucket,key,this._handleCallback(resolve,reject))
+    downLoadAllFile() {
+        return new Promise((resolve, reject) => {
+            this.bucketManager.listPrefix(this.bucket, {}, this._handleCallback)
+        })
+    }
+    getStat(key) {
+        return new Promise((resolve, reject) => {
+            this.bucketManager.stat(this.bucket, key, this._handleCallback(resolve, reject))
+        })
+    }
+    // 获取指定前缀的文件列表
+    getFilesList() {
+        return new Promise((resolve, reject) => {
+            const options = {}
+            this.bucketManager.listPrefix(
+                this.bucket,
+                options,
+                this._handleCallback(resolve, reject)
+            )
         })
     }
     //接受两个参数(resolve,reject)，然后返回接受三个参数的函数，这个函数可以调用resolve和reject

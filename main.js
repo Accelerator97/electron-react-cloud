@@ -138,6 +138,112 @@ app.on('ready', () => {
         })
     })
 
+    ipcMain.on('download-all-to-local',()=>{
+        mainWindow.webContents.send('loading-status',true)
+
+        //获取本地文件名
+        const filesObj = fileStore.get('files') || {}
+        const localFiles = Object.keys(filesObj).reduce((result,fileKey)=>{
+            const title = filesObj[fileKey].title + `.md`
+            result[title] = filesObj[fileKey]
+            return result
+        },{})
+
+        console.log('本地文件',localFiles)
+          
+        //获取本地文件存放路径
+        const savedLocation = settingsStore.get('savedFileLocation') || app.getPath('documents')
+
+        //获取云端文件
+        const manager = createManager()
+        manager
+        .getFilesList()
+        .then(({ items }) => {
+          // console.log('返回', items)
+          // 和本地列表进行对比，下载文件应该是比本地新的或本地没有的
+          //filter()对数组中的每个元素都执行一次指定的函数（callback），并且创建一个新的数组，该数组元素是所有回调函数执行时返回值为 true(return true) 的原数组元素，返回值为false(return false)的原数组元素过滤掉
+          downloadFiles = items.filter(item => {
+            if (localFiles[item.key]) {
+              console.log('本地存在', item.key)
+              return item.putTime / 10000 > localFiles[item.key].updatedAt
+            } else {
+              console.log('本地不存在', item.key)
+              return true
+            }
+          })
+          console.log('需要下载的文件列表', downloadFiles)
+  
+          const downloadPromiseArr = downloadFiles.map(item => {
+            // 本地存在的按原路径下载，不存在的按设置路径下载
+            if (localFiles[item.key]) {
+              return manager.downLoadFile(item.key, localFiles[item.key].path)
+            } else {
+              return manager.downLoadFile(
+                item.key,
+                path.join(savedLocation, item.key)
+              )
+            }
+          })
+  
+          return Promise.all(downloadPromiseArr)
+        })
+        .then(arr => {
+          dialog.showMessageBox({
+            type: 'info',
+            title: `本地下载更新完毕！`,
+            message: `本地下载更新完毕！`
+          })
+  
+          // 生成一个新的key为id, value为文件详情的object
+          // 本地存在的对象覆盖掉，不存在的新建一个文件对象
+          const finalFilesObj = downloadFiles.reduce(
+            (newFilesObj, qiniuFile) => {
+              const currentFile = localFiles[qiniuFile.key]
+              if (currentFile) {
+                const updateItem = {
+                  ...currentFile,
+                  isSynced: true,
+                  updatedAt: new Date().getTime()
+                }
+                return {
+                  ...newFilesObj,
+                  [currentFile.id]: updateItem
+                }
+              } else {
+                const newId = uuidv4()
+                const title = qiniuFile.key.split('.')[0]
+                const newItem = {
+                  id: newId,
+                  title,
+                  body: '## 请输出 Markdown',
+                  createdAt: new Date().getTime(),
+                  path: path.join(savedLocation, `${title}.md`),
+                  isSynced: true,
+                  updatedAt: new Date().getTime()
+                }
+                return {
+                  ...newFilesObj,
+                  [newId]: newItem
+                }
+              }
+            },
+            { ...filesObj }
+          )
+          console.log('更新本地数据', finalFilesObj)
+          mainWindow.webContents.send('files-downLoaded', {
+            newFiles: finalFilesObj
+          })
+        })
+        .catch((err) => {
+          dialog.showErrorBox('下载失败', '下载失败')
+          console.log(err)
+        })
+        .finally(() => {
+          mainWindow.webContents.send('loading-status', false)
+        })
+    })
+  
+
     //删除文件
     ipcMain.on('delete-file', (event, data) => {
         const manager = createManager()
@@ -153,17 +259,14 @@ app.on('ready', () => {
 
     //文件重命名
     ipcMain.on('update-file-name', (event, data) => {
-        console.log('data', data)
         const {newName,oldName} = data
-        console.log('新文件名',newName)
-        console.log('旧文件名',oldName)
         const manager = createManager()
         manager.updateName(newName,oldName).then(res=>{
             console.log(res)
             console.log('更新云端文件名成功')
         }).catch(err=>{
-            console.log('更新云端文件名失败')
+            dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
+            console.log('更新云端文件名失败',err)
         })
-        console.log('执行完毕')
     })
 })
