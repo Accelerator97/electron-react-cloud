@@ -57,7 +57,7 @@ function App() {
   //搜索文件形成的数组
   const [searchFiles, setSearchFiles] = useState([])
   //控制loading组件显示
-  const [loading,setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   //还得把files从obj转为数组
   const filesObjtoArr = objToArr(files)
@@ -85,7 +85,7 @@ function App() {
   const fileClick = (fileId) => {
     setActiveFileId(fileId)
     const currentFile = files[fileId]
-    const {id,title,path,isLoaded}= currentFile
+    const { id, title, path, isLoaded } = currentFile
     //第一次打开文件 状态设置为isLoaded:true，下一次打开isLoaded为true,就不用调用fs读取文件
     if (!isLoaded) {
       if (getAutoSync) { //如果配置了七牛参数并且开启自动同步，则先从云端下载最新文件
@@ -165,8 +165,9 @@ function App() {
     }
   })
 
+
   const deleteFile = (id) => {
-    if (files[id].isNew) { //只是刚刚创建还没存到electron-store中
+    if (files[id].isNew) { //只是刚刚创建还没存到electron-store中,还没上传到七牛云
       //排除对应的id，剩下的id集合成一个对象
       const { [id]: value, ...afterDelete } = files
       setFiles(afterDelete)
@@ -177,6 +178,9 @@ function App() {
         saveFilesToStore(afterDelete)
         //如果file已经在tab打开 
         tabClose(id)
+        if(getAutoSync && files[id].isSynced){
+          ipcRenderer.send('delete-file',`${files[id].title}.md`)
+        }
       })
     }
   }
@@ -229,6 +233,7 @@ function App() {
   const saveCurrentFile = () => {
     const { path, body, title } = activeFile
     fileHelper.writeFile(path, body).then(() => {
+      //将没保存的ids剔除activeFile.id
       setUnSaveFileIds(unSaveFileIds.filter(id => id !== activeFile.id))
       if (getAutoSync) {
         ipcRenderer.send('upload-file', { key: `${title}.md`, path })
@@ -286,47 +291,48 @@ function App() {
     })
   }
 
-  //上传成功之后更新状态 然后更新state和本地store
+  //单个上传成功之后更新状态 然后更新state和本地store
   const activeFileUploaded = () => {
     const { id } = activeFile
     const modifiledFile = { ...files[id], isSynced: true, updatedAt: new Date().getTime() }
     const newFiles = { ...files, [id]: modifiledFile }
-    console.log('更新本地')
     setFiles(newFiles)
     saveFilesToStore(newFiles)
+    console.log('更新本地文件')
   }
-  //下载文件到本地之后更新state和本地store
-  const activeFileDownLoaded =(event,message)=>{
+
+  //单个文件下载到本地之后更新state和本地store
+  const activeFileDownLoaded = (event, message) => {
     const currentFile = files[message.id]
-    const {id,path } = currentFile
-    fileHelper.readFile(path).then((value)=>{
+    const { id, path } = currentFile
+    fileHelper.readFile(path).then((value) => {
       let newFile
-      if(message.status === 'downloaed-success'){
-        newFile = {...files[id],body:value,isLoaded:true,isSynced:true,updatedAt:new Date().gettime()}
-      }else{
-        newFile = {...files[id],body:value,isLoaded:true}
+      if (message.status === 'downloaed-success') {
+        newFile = { ...files[id], body: value, isLoaded: true, isSynced: true, updatedAt: new Date().gettime() }
+      } else {
+        newFile = { ...files[id], body: value, isLoaded: true }
       }
-      const newFiles= {...files,[id]:newFile}
+      const newFiles = { ...files, [id]: newFile }
       setFiles(newFiles)
       saveFilesToStore(newFiles)
     })
   }
   //改变loading状态
-  const changeLoadingStatus = (event,message) => {
+  const changeLoadingStatus = (event, message) => {
     setLoading(message)
   }
- 
+
   //全部文件同步到七牛云后更新本地文件状态
-  const filesUploaded = (event,message) => {
-    const newFiles = objToArr(files).reduce((result,file)=>{
+  const filesUploaded = (event, message) => {
+    const newFiles = objToArr(files).reduce((result, file) => {
       const currentTime = new Date().getTime()
       result[file.id] = {
         ...files[file.id],
-        isSynced:true,
-        updatedAt:currentTime
+        isSynced: true,
+        updatedAt: currentTime
       }
       return result
-    },{})
+    }, {})
     setFiles(newFiles)
     saveFilesToStore(newFiles)
   }
@@ -336,9 +342,9 @@ function App() {
     'import-file': importFiles,
     'save-edit-file': saveCurrentFile,
     'active-file-uploaded': activeFileUploaded,
-    'file-downloaded':activeFileDownLoaded,
-    'loading-status':changeLoadingStatus,
-    'files-uploaded':filesUploaded
+    'file-downloaded': activeFileDownLoaded,
+    'loading-status': changeLoadingStatus,
+    'files-uploaded': filesUploaded
   })
 
   //监听键盘事件
@@ -353,7 +359,7 @@ function App() {
 
   return (
     <div className="App container-fluid px-0">
-      {loading && 
+      {loading &&
         <Loader></Loader>
       }
       <div className="row no-gutters">

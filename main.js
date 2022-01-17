@@ -83,64 +83,70 @@ app.on('ready', () => {
     })
 
     ipcMain.on('download-file', (event, data) => {
-        console.log('2222222')
         const manager = createManager()
         const filesObj = fileStore.get('files')
         const { key, path, id } = data
         manager.getStat(data.key).then((res) => {
-            console.log('云端文件', res)
-            console.log('本地文件', filesObj[data.id])
             //普及下TimeStamp 从1970年1月1日到现在的秒数
             //1秒=1000毫秒 1毫秒 = 1000微秒  1微秒 = 1000 纳秒
             //puttime是七牛云文档中提示的文件创建时间，单位是100纳秒
             //所以1毫秒 = 10000 * 100 纳秒
-            const serverUpdatedTIme = Math.round(res.putTime  / 10000 )
+            const serverUpdatedTIme = Math.round(res.putTime / 10000)
             const localUpdatedTime = filesObj[id].updatedAt
-            console.log(serverUpdatedTIme,'服务器时间')
-            console.log(localUpdatedTime,'本地时间')
-            if(serverUpdatedTIme > localUpdatedTime || !localUpdatedTime){
+            if (serverUpdatedTIme > localUpdatedTime || !localUpdatedTime) {
                 console.log('new File')
-                manager.downLoadFile(key,path).then(()=>{
-                    mainWindow.webContents.send('file-downloaded',{status:'downloaed-success',id})
+                manager.downLoadFile(key, path).then(() => {
+                    mainWindow.webContents.send('file-downloaded', { status: 'downloaed-success', id })
                 })
-            }else{
+            } else {
                 console.log('no new file')
-                mainWindow.webContents.send('file-downloaded',{status:'no-new-file',id})
+                mainWindow.webContents.send('file-downloaded', { status: 'no-new-file', id })
             }
         }, (err) => {
             if (err.status === 612) {
-                mainWindow.webContents.send('file-downloaded', { status: 'no-file',id})
+                mainWindow.webContents.send('file-downloaded', { status: 'no-file', id })
             }
             console.log(err)
         })
-
     })
 
-    ipcMain.on('upload-all-to-qiniu',()=>{
-        mainWindow.webContents.send('loading-status',true)
+    ipcMain.on('upload-all-to-qiniu', () => {
+        mainWindow.webContents.send('loading-status', true)
         //从本地store中拿到所有的files
         const filesObj = fileStore.get('files') || {}
         const manager = createManager()
         //上传filesObj中的每一个对象到七牛云
-        const uploadPromiseArr = Object.keys(filesObj).map(key=>{
+        const uploadPromiseArr = Object.keys(filesObj).map(key => {
             const file = filesObj[key]
-            return manager.upLoadFile(`${file.title}.md`,file.path)
+            return manager.upLoadFile(`${file.title}.md`, file.path)
         })
-        Promise.all(uploadPromiseArr).then(result=>{
+        Promise.all(uploadPromiseArr).then(result => {
             //上传成功弹出提示
             dialog.showMessageBox({
-                type:'info',
-                title:`成功上传了${result.length}个文件`,
-                message:`成功上传了${result.length}个文件`
+                type: 'info',
+                title: `成功上传了${result.length}个文件`,
+                message: `成功上传了${result.length}个文件`
             })
             //发送事件给渲染进程 要更新state和本地store中关于文件的状态
             mainWindow.webContents.send('files-uploaded')
-        }).catch(err =>{
+        }).catch(err => {
             //上传失败弹出提示
             dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
             console.log(err)
-        }).finally(()=>{
-            mainWindow.webContents.send('loading-status',false)
+        }).finally(() => {
+            mainWindow.webContents.send('loading-status', false)
+        })
+    })
+
+    ipcMain.on('delete-file', (event, data) => {
+        const manager = createManager()
+        console.log('data',data)
+        manager.deleteFile(data).then((res) => {
+            console.log(res)
+            mainWindow.webContents.send('delete-file', { status: 'delete-file-success', id })
+        }, (err) => {
+            dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
+            console.log(err)
         })
     })
 })

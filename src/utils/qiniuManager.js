@@ -1,6 +1,7 @@
 const qiniu = require('qiniu')
 const axios = require('axios')
-const fs = require('fs')
+const fs = require('fs');
+const { resolve } = require('path');
 
 class QiniuManager {
     constructor(accessKey, secretKey, bucket) {
@@ -34,6 +35,16 @@ class QiniuManager {
     deleteFile(key) {
         return new Promise((resolve, reject) => {
             this.bucketManager.delete(this.bucket, key, this._handleCallback(resolve, reject));
+        })
+    }
+    //更新文件名
+    updateName(key){
+        //强制覆盖已有同名文件
+        var options = {
+            force: true
+          }
+        return new Promise((resolve,reject)=>{
+            this.bucketManager.move(this.bucket,key.oldName,this.bucket,key.newName,options,this._handleCallback(resolve,reject))
         })
     }
     getBucketDomain() {
