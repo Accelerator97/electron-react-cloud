@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron')
+const { app,Menu, ipcMain, dialog } = require('electron')
 const isDev = require('electron-is-dev')
 const menuTemplate = require('./src/menuTemplate')
 const AppWindow = require('./src/AppWindow')
@@ -19,10 +19,11 @@ app.on('ready', () => {
     const mainWindowConfig = {
         width: 1024,
         height: 680,
+
     }
 
     //判断是否在生产环境
-    const urlLocation = isDev ? 'http://localhost:3000' : `file://${path.join(__dirname,'./build/index.html')}`
+    const urlLocation = isDev ? 'http://localhost:3000' : `file://${path.join(__dirname,'./index.html')}`
     mainWindow = new AppWindow(mainWindowConfig, urlLocation)
     mainWindow.on('close', () => {
         mainWindow = null
@@ -41,7 +42,7 @@ app.on('ready', () => {
             parent: mainWindow
         }
         //加载setting.html  如果是加载html文件用file:// 结合path.join拼接文件路径
-        const settingFileLocation = `file://${path.join(__dirname, './settings/settings.html')}`
+        const settingFileLocation = isDev?`file://${path.join(__dirname, './settings/settings.html')}` :`file://${path.join(__dirname, '../settings/settings.html')}`
         settingWindow = new AppWindow(settingWindowConfig, settingFileLocation)
         settingWindow.removeMenu() //移除原生菜单
         settingWindow.on('closed', () => {
