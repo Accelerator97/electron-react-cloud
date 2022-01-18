@@ -22,7 +22,7 @@ app.on('ready', () => {
     }
 
     //判断是否在生产环境
-    const urlLocation = isDev ? 'http://localhost:3000' : 'dummyurl'
+    const urlLocation = isDev ? 'http://localhost:3000' : `file://${path.join(__dirname,'./build/index.html')}`
     mainWindow = new AppWindow(mainWindowConfig, urlLocation)
     mainWindow.on('close', () => {
         mainWindow = null

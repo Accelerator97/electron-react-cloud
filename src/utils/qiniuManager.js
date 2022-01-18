@@ -13,7 +13,6 @@ class QiniuManager {
         // 空间对应的机房
         this.config.zone = qiniu.zone.Zone_z0; //华东
         this.bucketManager = new qiniu.rs.BucketManager(this.mac, this.config);
-
     }
     //上传文件，key是要上传的文件 
     upLoadFile(key, localFilePath) {
