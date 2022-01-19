@@ -1,4 +1,4 @@
-const fs = window.require('fs/promises')
+const fs = window.require('fs').promises
 
 export const fileHelper = {
     readFile:(path) => {
